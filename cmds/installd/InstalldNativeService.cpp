@@ -318,10 +318,14 @@ status_t InstalldNativeService::dump(int fd, const Vector<String16> & /* args */
  * if the label of that top-level file actually changed.  This can save us
  * significant time by avoiding no-op traversals of large filesystem trees.
  */
-static int restorecon_app_data_lazy(const std::string& path, const std::string& seInfo, uid_t uid,
-        bool existing) {
+static int restorecon_app_data_lazy(const std::string& /*path*/, const std::string& /*seInfo*/, uid_t /*uid*/,
+        bool /*existing*/) {
     int res = 0;
-    char* before = nullptr;
+
+    // Disabled for Waydroid
+    return res;
+
+    /*char* before = nullptr;
     char* after = nullptr;
 
     // Note that SELINUX_ANDROID_RESTORECON_DATADATA flag is set by
@@ -360,7 +364,7 @@ fail:
 done:
     free(before);
     free(after);
-    return res;
+    return res;*/
 }
 
 static int restorecon_app_data_lazy(const std::string& parent, const char* name,
@@ -1201,10 +1205,11 @@ binder::Status InstalldNativeService::moveCompleteApp(const std::unique_ptr<std:
             goto fail;
         }
 
-        if (selinux_android_restorecon(to_app_package_path.c_str(), SELINUX_ANDROID_RESTORECON_RECURSE) != 0) {
+        // Disabled for Waydroid
+        /*if (selinux_android_restorecon(to_app_package_path.c_str(), SELINUX_ANDROID_RESTORECON_RECURSE) != 0) {
             res = error("Failed to restorecon " + to_app_package_path);
             goto fail;
-        }
+        }*/
     }
 
     // Copy private data for all known users
@@ -2461,10 +2466,11 @@ binder::Status InstalldNativeService::linkNativeLibraryDirectory(
         return error("Failed to stat " + _pkgdir);
     }
 
-    char *con = nullptr;
+    // Disabled for Waydroid
+    /*char *con = nullptr;
     if (lgetfilecon(pkgdir, &con) < 0) {
         return error("Failed to lgetfilecon " + _pkgdir);
-    }
+    }*/
 
     if (chown(pkgdir, AID_INSTALL, AID_INSTALL) < 0) {
         res = error("Failed to chown " + _pkgdir);
@@ -2500,13 +2506,14 @@ binder::Status InstalldNativeService::linkNativeLibraryDirectory(
         goto out;
     }
 
-    if (lsetfilecon(libsymlink, con) < 0) {
+    // Disabled for Waydroid
+    /*if (lsetfilecon(libsymlink, con) < 0) {
         res = error("Failed to lsetfilecon " + _libsymlink);
         goto out;
-    }
+    }*/
 
 out:
-    free(con);
+    //free(con);
     if (chmod(pkgdir, s.st_mode) < 0) {
         auto msg = "Failed to cleanup chmod " + _pkgdir;
         if (res.isOk()) {
@@ -2576,9 +2583,10 @@ binder::Status InstalldNativeService::createOatDir(const std::string& oatDir,
     if (fs_prepare_dir(oat_dir, S_IRWXU | S_IRWXG | S_IXOTH, AID_SYSTEM, AID_INSTALL)) {
         return error("Failed to prepare " + oatDir);
     }
-    if (selinux_android_restorecon(oat_dir, 0)) {
+    // Disabled for Waydroid
+    /*if (selinux_android_restorecon(oat_dir, 0)) {
         return error("Failed to restorecon " + oatDir);
-    }
+    }*/
     snprintf(oat_instr_dir, PKG_PATH_MAX, "%s/%s", oat_dir, instruction_set);
     if (fs_prepare_dir(oat_instr_dir, S_IRWXU | S_IRWXG | S_IXOTH, AID_SYSTEM, AID_INSTALL)) {
         return error(StringPrintf("Failed to prepare %s", oat_instr_dir));

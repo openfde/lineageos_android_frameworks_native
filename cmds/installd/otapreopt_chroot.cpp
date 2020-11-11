@@ -206,10 +206,11 @@ static int otapreopt_chroot(const int argc, char **arg) {
         PLOG(ERROR) << "Failed to mount tmpfs in " << kPostinstallApexDir;
         exit(209);
     }
-    if (selinux_android_restorecon(kPostinstallApexDir, 0) < 0) {
+    // Disabled for Waydroid
+    /*if (selinux_android_restorecon(kPostinstallApexDir, 0) < 0) {
         PLOG(ERROR) << "Failed to restorecon " << kPostinstallApexDir;
         exit(214);
-    }
+    }*/
     if (chmod(kPostinstallApexDir, 0755) != 0) {
         PLOG(ERROR) << "Failed to chmod " << kPostinstallApexDir << " to 0755";
         exit(210);
