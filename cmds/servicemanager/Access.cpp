@@ -31,6 +31,9 @@ constexpr bool kIsVendor = false;
 #endif
 
 static std::string getPidcon(pid_t pid) {
+    // Disabled for Halium
+    return "";
+
     android_errorWriteLog(0x534e4554, "121035042");
 
     char* lookup = nullptr;
@@ -88,9 +91,10 @@ Access::Access() {
     cb.func_log = kIsVendor ? selinux_vendor_log_callback : selinux_log_callback;
     selinux_set_callback(SELINUX_CB_LOG, cb);
 
-    CHECK(selinux_status_open(true /*fallback*/) >= 0);
+    // Disabled for Halium
+    /*CHECK(selinux_status_open(true) >= 0);
 
-    CHECK(getcon(&mThisProcessContext) == 0);
+    CHECK(getcon(&mThisProcessContext) == 0);*/
 }
 
 Access::~Access() {
@@ -124,6 +128,9 @@ bool Access::canList(const CallingContext& ctx) {
 
 bool Access::actionAllowed(const CallingContext& sctx, const char* tctx, const char* perm,
         const std::string& tname) {
+    // Disabled for Halium
+    return true;
+
     const char* tclass = "service_manager";
 
     AuditCallbackData data = {
@@ -136,6 +143,9 @@ bool Access::actionAllowed(const CallingContext& sctx, const char* tctx, const c
 }
 
 bool Access::actionAllowedFromLookup(const CallingContext& sctx, const std::string& name, const char *perm) {
+    // Disabled for Halium
+    return true;
+
     char *tctx = nullptr;
     if (selabel_lookup(getSehandle(), &tctx, name.c_str(), SELABEL_CTX_ANDROID_SERVICE) != 0) {
         LOG(ERROR) << "SELinux: No match for " << name << " in service_contexts.\n";
