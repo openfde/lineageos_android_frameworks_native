@@ -139,7 +139,8 @@ bool ProcessState::becomeContextManager(context_check_func checkFunc, void* user
     mBinderContextUserData = userData;
 
     flat_binder_object obj {
-        .flags = FLAT_BINDER_FLAG_TXN_SECURITY_CTX,
+        // Disabled for Halium
+        /*.flags = FLAT_BINDER_FLAG_TXN_SECURITY_CTX,*/
     };
 
     int result = ioctl(mDriverFD, BINDER_SET_CONTEXT_MGR_EXT, &obj);

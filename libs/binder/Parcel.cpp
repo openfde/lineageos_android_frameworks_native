@@ -223,9 +223,10 @@ status_t Parcel::flattenBinder(const sp<IBinder>& binder)
                 // override value, since it is set explicitly
                 schedBits = schedPolicyMask(policy, priority);
             }
-            if (local->isRequestingSid()) {
+            // Disabled for Halium
+            /*if (local->isRequestingSid()) {
                 obj.flags |= FLAT_BINDER_FLAG_TXN_SECURITY_CTX;
-            }
+            }*/
             obj.hdr.type = BINDER_TYPE_BINDER;
             obj.binder = reinterpret_cast<uintptr_t>(local->getWeakRefs());
             obj.cookie = reinterpret_cast<uintptr_t>(local);
