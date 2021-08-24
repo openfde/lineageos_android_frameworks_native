@@ -383,6 +383,12 @@ void OutputLayer::writeOutputDependentGeometryStateToHWC(
               outputDependentState.z, to_string(error).c_str(), static_cast<int32_t>(error));
     }
 
+    if (auto error = hwcLayer->setLayerName(getLayerFE().getDebugName());
+            error != hal::Error::NONE) {
+            ALOGE("[%s] Failed to set layer name: %s (%d)", getLayerFE().getDebugName(),
+                  to_string(error).c_str(), static_cast<int32_t>(error));
+    }
+
     // Solid-color layers should always use an identity transform.
     const auto bufferTransform = requestedCompositionType != hal::Composition::SOLID_COLOR
             ? outputDependentState.bufferTransform

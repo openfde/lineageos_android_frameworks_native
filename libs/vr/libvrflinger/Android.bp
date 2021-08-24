@@ -60,6 +60,7 @@ sharedLibraries = [
     "libhidlbase",
     "libfmq",
     "libpdx_default_transport",
+    "vendor.waydroid.display@1.0",
 ]
 
 headerLibraries = [

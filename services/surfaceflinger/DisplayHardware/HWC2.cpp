@@ -1004,6 +1004,12 @@ Error Layer::setLayerGenericMetadata(const std::string& name, bool mandatory,
     return static_cast<Error>(intError);
 }
 
+Error Layer::setLayerName(std::string name)
+{
+    auto intError = mComposer.setLayerName(mDisplayId, mId, name);
+    return static_cast<Error>(intError);
+}
+
 } // namespace impl
 } // namespace HWC2
 } // namespace android

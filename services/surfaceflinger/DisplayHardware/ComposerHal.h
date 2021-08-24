@@ -33,6 +33,7 @@
 #include <android/hardware/graphics/common/1.1/types.h>
 #include <android/hardware/graphics/composer/2.4/IComposer.h>
 #include <android/hardware/graphics/composer/2.4/IComposerClient.h>
+#include <vendor/waydroid/display/1.0/IWaydroidDisplay.h>
 #include <composer-command-buffer/2.4/ComposerCommandBuffer.h>
 #include <gui/HdrMetadata.h>
 #include <math/mat4.h>
@@ -46,6 +47,8 @@
 namespace android {
 
 namespace Hwc2 {
+
+using ::vendor::waydroid::display::V1_0::IWaydroidDisplay;
 
 #if defined(USE_VR_COMPOSER) && USE_VR_COMPOSER
 using frameworks::vr::composer::V2_0::IVrComposerClient;
@@ -215,6 +218,9 @@ public:
     virtual Error setLayerPerFrameMetadataBlobs(
             Display display, Layer layer, const std::vector<PerFrameMetadataBlob>& metadata) = 0;
     virtual Error setDisplayBrightness(Display display, float brightness) = 0;
+
+    // WaydroidDisplay HAL 1.0
+    virtual Error setLayerName(Display display, Layer layer, std::string name) = 0;
 
     // Composer HAL 2.4
     virtual bool isVsyncPeriodSwitchSupported() = 0;
@@ -489,6 +495,9 @@ public:
             Display display,
             IComposerClient::ClientTargetProperty* outClientTargetProperty) override;
 
+    // WaydroidDisplay HAL 1.0
+    Error setLayerName(Display display, Layer layer, std::string name) override;
+
 private:
 #if defined(USE_VR_COMPOSER) && USE_VR_COMPOSER
     class CommandWriter : public CommandWriterBase {
@@ -535,6 +544,10 @@ private:
     // When true, the we attach to the vr_hwcomposer service instead of the
     // hwcomposer. This allows us to redirect surfaces to 3d surfaces in vr.
     const bool mIsUsingVrComposer;
+
+    sp<IWaydroidDisplay> mWaydroidDisplay;
+    std::map<Layer, int32_t> mLayersZMap;
+    std::map<int32_t, std::string> mLayersNameMap;
 };
 
 } // namespace impl
