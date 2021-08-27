@@ -23,6 +23,7 @@
 #include <binder/TextOutput.h>
 
 #include <android-base/macros.h>
+#include <android-base/properties.h>
 #include <cutils/sched_policy.h>
 #include <utils/CallStack.h>
 #include <utils/Log.h>
@@ -375,6 +376,11 @@ const char* IPCThreadState::getCallingSid() const
 
 uid_t IPCThreadState::getCallingUid() const
 {
+    if (mCallingUid != 1000) {
+        int hostuid = android::base::GetIntProperty("waydroid.host.uid", 1000);
+        if (mCallingUid == (uid_t)hostuid)
+            return 1000;
+    }
     return mCallingUid;
 }
 
