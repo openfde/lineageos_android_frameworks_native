@@ -285,19 +285,22 @@ enum {
     WL_INPUT_TOUCH,
     WL_INPUT_KEYBOARD,
     WL_INPUT_POINTER,
+    WL_INPUT_TABLET,
     WL_INPUT_TOTAL
 };
 
 static const char *INPUT_PIPE_NAME[WL_INPUT_TOTAL] = {
     "/dev/input/wl_touch_events",
     "/dev/input/wl_keyboard_events",
-    "/dev/input/wl_pointer_events"
+    "/dev/input/wl_pointer_events",
+    "/dev/input/wl_tablet_events"
 };
 
 static const char *INPUT_TYPE_NAME[WL_INPUT_TOTAL] = {
     "wayland_touch",
     "wayland_keyboard",
-    "wayland_pointer"
+    "wayland_pointer",
+    "wayland_tablet"
 };
 
 EventHub::EventHub(void)
@@ -1604,6 +1607,30 @@ if (!isWayland) {
         set_bit(REL_Y, device->relBitmask);
         set_bit(REL_HWHEEL, device->relBitmask);
         set_bit(REL_WHEEL, device->relBitmask);
+    } else if (inputType == WL_INPUT_TABLET) {
+        device->classes |= INPUT_DEVICE_CLASS_EXTERNAL_STYLUS |
+                           INPUT_DEVICE_CLASS_TOUCH;
+
+        set_bit(INPUT_PROP_DIRECT, device->propBitmask);
+
+        set_bit(BTN_TOOL_PEN, device->keyBitmask);
+        set_bit(BTN_TOOL_RUBBER, device->keyBitmask);
+        set_bit(BTN_TOOL_BRUSH, device->keyBitmask);
+        set_bit(BTN_TOOL_PENCIL, device->keyBitmask);
+        set_bit(BTN_TOOL_AIRBRUSH, device->keyBitmask);
+        set_bit(BTN_TOOL_FINGER, device->keyBitmask);
+        set_bit(BTN_TOOL_MOUSE, device->keyBitmask);
+        set_bit(BTN_TOOL_LENS, device->keyBitmask);
+        set_bit(BTN_TOUCH, device->keyBitmask);
+        set_bit(BTN_STYLUS, device->keyBitmask);
+        set_bit(BTN_STYLUS2, device->keyBitmask);
+        set_bit(BTN_STYLUS3, device->keyBitmask);
+        set_bit(ABS_X, device->absBitmask);
+        set_bit(ABS_Y, device->absBitmask);
+        set_bit(ABS_PRESSURE, device->absBitmask);
+        set_bit(ABS_DISTANCE, device->absBitmask);
+        set_bit(ABS_TILT_X, device->absBitmask);
+        set_bit(ABS_TILT_Y, device->absBitmask);
     }
 }
 
