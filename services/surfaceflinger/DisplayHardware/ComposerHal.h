@@ -221,6 +221,7 @@ public:
 
     // WaydroidDisplay HAL 1.0
     virtual Error setLayerName(Display display, Layer layer, std::string name) = 0;
+    virtual Error setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer) = 0;
 
     // Composer HAL 2.4
     virtual bool isVsyncPeriodSwitchSupported() = 0;
@@ -497,6 +498,7 @@ public:
 
     // WaydroidDisplay HAL 1.0
     Error setLayerName(Display display, Layer layer, std::string name) override;
+    Error setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer) override;
 
 private:
 #if defined(USE_VR_COMPOSER) && USE_VR_COMPOSER
@@ -548,6 +550,7 @@ private:
     sp<IWaydroidDisplay> mWaydroidDisplay;
     std::map<Layer, int32_t> mLayersZMap;
     std::map<int32_t, std::string> mLayersNameMap;
+    std::map<int32_t, const native_handle_t*> mLayersHandleMap;
 };
 
 } // namespace impl

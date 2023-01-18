@@ -335,7 +335,7 @@ void OutputLayer::writeStateToHWC(bool includeGeometry) {
     auto requestedCompositionType = outputIndependentState->compositionType;
 
     if (includeGeometry) {
-        writeOutputDependentGeometryStateToHWC(hwcLayer.get(), requestedCompositionType);
+        writeOutputDependentGeometryStateToHWC(hwcLayer.get(), requestedCompositionType, outputIndependentState->buffer);
         writeOutputIndependentGeometryStateToHWC(hwcLayer.get(), *outputIndependentState);
     }
 
@@ -349,7 +349,7 @@ void OutputLayer::writeStateToHWC(bool includeGeometry) {
 }
 
 void OutputLayer::writeOutputDependentGeometryStateToHWC(
-        HWC2::Layer* hwcLayer, hal::Composition requestedCompositionType) {
+        HWC2::Layer* hwcLayer, hal::Composition requestedCompositionType, const sp<GraphicBuffer>& buffer) {
     const auto& outputDependentState = getState();
 
     if (auto error = hwcLayer->setDisplayFrame(outputDependentState.displayFrame);
@@ -381,6 +381,11 @@ void OutputLayer::writeOutputDependentGeometryStateToHWC(
     if (auto error = hwcLayer->setZOrder(z); error != hal::Error::NONE) {
         ALOGE("[%s] Failed to set Z %u: %s (%d)", getLayerFE().getDebugName(),
               outputDependentState.z, to_string(error).c_str(), static_cast<int32_t>(error));
+    }
+
+    if (auto error = hwcLayer->setLayerHandleInfo(buffer); error != hal::Error::NONE) {
+        ALOGE("[%s] Failed to set layer buffer info: %s (%d)", getLayerFE().getDebugName(),
+              to_string(error).c_str(), static_cast<int32_t>(error));
     }
 
     if (auto error = hwcLayer->setLayerName(getLayerFE().getDebugName());

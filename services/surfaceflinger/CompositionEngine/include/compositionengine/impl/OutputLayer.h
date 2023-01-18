@@ -65,7 +65,7 @@ protected:
 
 private:
     Rect calculateInitialCrop() const;
-    void writeOutputDependentGeometryStateToHWC(HWC2::Layer*, Hwc2::IComposerClient::Composition);
+    void writeOutputDependentGeometryStateToHWC(HWC2::Layer*, Hwc2::IComposerClient::Composition, const sp<GraphicBuffer>&);
     void writeOutputIndependentGeometryStateToHWC(HWC2::Layer*, const LayerFECompositionState&);
     void writeOutputDependentPerFrameStateToHWC(HWC2::Layer*);
     void writeOutputIndependentPerFrameStateToHWC(HWC2::Layer*, const LayerFECompositionState&);

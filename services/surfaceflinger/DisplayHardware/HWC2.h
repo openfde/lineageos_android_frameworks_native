@@ -392,6 +392,7 @@ public:
 
     // WaydroidDisplay HAL 1.0
     [[clang::warn_unused_result]] virtual hal::Error setLayerName(std::string name) = 0;
+    [[clang::warn_unused_result]] virtual hal::Error setLayerHandleInfo(const sp<GraphicBuffer>& buffer) = 0;
 };
 
 namespace impl {
@@ -436,6 +437,7 @@ public:
 
     // WaydroidDisplay HAL 1.0
     hal::Error setLayerName(std::string name) override;
+    hal::Error setLayerHandleInfo(const sp<GraphicBuffer>& buffer) override;
 
 private:
     // These are references to data owned by HWC2::Device, which will outlive

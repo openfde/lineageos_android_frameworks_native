@@ -1010,6 +1010,12 @@ Error Layer::setLayerName(std::string name)
     return static_cast<Error>(intError);
 }
 
+Error Layer::setLayerHandleInfo(const sp<GraphicBuffer>& buffer)
+{
+    auto intError = mComposer.setLayerHandleInfo(mDisplayId, mId, buffer);
+    return static_cast<Error>(intError);
+}
+
 } // namespace impl
 } // namespace HWC2
 } // namespace android

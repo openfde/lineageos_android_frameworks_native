@@ -741,9 +741,6 @@ Error Composer::setLayerBuffer(Display display, Layer layer,
 
     const native_handle_t* handle = nullptr;
     if (buffer.get()) {
-        if (mWaydroidDisplay)
-            mWaydroidDisplay->setLayerHandleInfo(mLayersZMap[layer], buffer->getPixelFormat(),
-                                              buffer->getStride());
         handle = buffer->getNativeBuffer()->handle;
     }
 
@@ -1378,6 +1375,20 @@ Error Composer::setLayerName(Display, Layer layer, std::string name) {
         return mWaydroidDisplay->setLayerName(mLayersZMap[layer], name);
     } else
         return Error::NONE;
+}
+
+Error Composer::setLayerHandleInfo(Display, Layer layer, const sp<GraphicBuffer>& buffer) {
+    if (!mWaydroidDisplay)
+        return Error::UNSUPPORTED;
+
+    if (buffer.get() &&
+            mLayersHandleMap[mLayersZMap[layer]] != buffer->getNativeBuffer()->handle) {
+        mLayersHandleMap[mLayersZMap[layer]] = buffer->getNativeBuffer()->handle;
+        return mWaydroidDisplay->setLayerHandleInfo(mLayersZMap[layer],
+                                                    buffer->getPixelFormat(),
+                                                    buffer->getStride());
+    }
+    return Error::NONE;
 }
 
 CommandReader::~CommandReader()
