@@ -261,7 +261,8 @@ void Composer::registerCallback(const sp<IComposerCallback>& callback)
         ALOGE("failed to register IComposerCallback");
     }
 
-    mWaydroidDisplay = IWaydroidDisplay::getService();
+    mWaydroidDisplay = V1_0::IWaydroidDisplay::getService();
+    mWaydroidDisplay_1 = V1_1::IWaydroidDisplay::castFrom(mWaydroidDisplay);
 }
 
 bool Composer::isRemote() {
@@ -608,6 +609,8 @@ Error Composer::setClientTarget(Display display, uint32_t slot,
     if (target.get()) {
         if (mWaydroidDisplay)
             mWaydroidDisplay->setTargetLayerHandleInfo(target->getPixelFormat(), target->getStride());
+        if (mWaydroidDisplay_1)
+            mWaydroidDisplay_1->setTargetLayerSize(target->getWidth(), target->getHeight());
         handle = target->getNativeBuffer()->handle;
     }
 
@@ -1378,15 +1381,22 @@ Error Composer::setLayerName(Display, Layer layer, std::string name) {
 }
 
 Error Composer::setLayerHandleInfo(Display, Layer layer, const sp<GraphicBuffer>& buffer) {
+    Error error;
     if (!mWaydroidDisplay)
         return Error::UNSUPPORTED;
 
     if (buffer.get() &&
             mLayersHandleMap[mLayersZMap[layer]] != buffer->getNativeBuffer()->handle) {
         mLayersHandleMap[mLayersZMap[layer]] = buffer->getNativeBuffer()->handle;
-        return mWaydroidDisplay->setLayerHandleInfo(mLayersZMap[layer],
+        error = mWaydroidDisplay->setLayerHandleInfo(mLayersZMap[layer],
                                                     buffer->getPixelFormat(),
                                                     buffer->getStride());
+        if (error != Error::NONE)
+            return error;
+
+        if (mWaydroidDisplay_1)
+            mWaydroidDisplay_1->setLayerSize(mLayersZMap[layer],
+                                            buffer->getWidth(), buffer->getHeight());
     }
     return Error::NONE;
 }

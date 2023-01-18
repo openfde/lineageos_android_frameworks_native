@@ -63,6 +63,7 @@ cc_defaults {
         "libutils",
         "libSurfaceFlingerProp",
         "vendor.waydroid.display@1.0",
+        "vendor.waydroid.display@1.1",
     ],
     // VrComposer is not used when building surfaceflinger for vendors
     target: {
@@ -103,6 +104,7 @@ cc_defaults {
         "libhidlbase",
         "libtimestats",
         "vendor.waydroid.display@1.0",
+        "vendor.waydroid.display@1.1",
     ],
     // TODO (marissaw): this library is not used by surfaceflinger. This is here so
     // the library compiled in a way that is accessible to system partition when running

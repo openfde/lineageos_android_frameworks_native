@@ -33,7 +33,7 @@
 #include <android/hardware/graphics/common/1.1/types.h>
 #include <android/hardware/graphics/composer/2.4/IComposer.h>
 #include <android/hardware/graphics/composer/2.4/IComposerClient.h>
-#include <vendor/waydroid/display/1.0/IWaydroidDisplay.h>
+#include <vendor/waydroid/display/1.1/IWaydroidDisplay.h>
 #include <composer-command-buffer/2.4/ComposerCommandBuffer.h>
 #include <gui/HdrMetadata.h>
 #include <math/mat4.h>
@@ -48,7 +48,7 @@ namespace android {
 
 namespace Hwc2 {
 
-using ::vendor::waydroid::display::V1_0::IWaydroidDisplay;
+using namespace vendor::waydroid::display;
 
 #if defined(USE_VR_COMPOSER) && USE_VR_COMPOSER
 using frameworks::vr::composer::V2_0::IVrComposerClient;
@@ -547,7 +547,8 @@ private:
     // hwcomposer. This allows us to redirect surfaces to 3d surfaces in vr.
     const bool mIsUsingVrComposer;
 
-    sp<IWaydroidDisplay> mWaydroidDisplay;
+    sp<V1_0::IWaydroidDisplay> mWaydroidDisplay;
+    sp<V1_1::IWaydroidDisplay> mWaydroidDisplay_1;
     std::map<Layer, int32_t> mLayersZMap;
     std::map<int32_t, std::string> mLayersNameMap;
     std::map<int32_t, const native_handle_t*> mLayersHandleMap;

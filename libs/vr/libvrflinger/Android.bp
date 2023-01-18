@@ -61,6 +61,7 @@ sharedLibraries = [
     "libfmq",
     "libpdx_default_transport",
     "vendor.waydroid.display@1.0",
+    "vendor.waydroid.display@1.1",
 ]
 
 headerLibraries = [
