@@ -16,6 +16,12 @@
 
 #ifndef ANDROID_GUI_CPUCONSUMER_H
 #define ANDROID_GUI_CPUCONSUMER_H
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#include <EGL/eglplatform.h>
+
 
 #include <system/window.h>
 
@@ -93,6 +99,7 @@ class CpuConsumer : public ConsumerBase
     // how many buffers can be locked for user access at the same time.
     CpuConsumer(const sp<IGraphicBufferConsumer>& bq,
             size_t maxLockedBuffers, bool controlledByApp = false);
+    ~CpuConsumer();
 
     // Gets the next graphics buffer from the producer and locks it for CPU use,
     // filling out the passed-in locked buffer structure with the native pointer
@@ -140,12 +147,64 @@ class CpuConsumer : public ConsumerBase
 
     size_t findAcquiredBufferLocked(uintptr_t id) const;
 
-    status_t lockBufferItem(const BufferItem& item, LockedBuffer* outBuffer) const;
+    status_t lockBufferItem(const BufferItem& item, LockedBuffer* outBuffer);
 
     Vector<AcquiredBuffer> mAcquiredBuffers;
 
     // Count of currently locked buffers
     size_t mCurrentLockedBuffers;
+
+    status_t initEgl(size_t width, size_t height, const bool isPossiblyYUV);
+    void closeEgl();
+
+    EGLDisplay mEglDisplay = EGL_NO_DISPLAY;
+    EGLContext mEglContext = EGL_NO_CONTEXT;
+    EGLSurface mEglSurface = EGL_NO_SURFACE;
+
+    const char *vertSource =
+        "precision mediump float;\n"
+        "attribute vec2 in_position;\n"
+        "attribute vec2 in_texcoord;\n"
+        "varying vec2 texcoord;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = vec4(in_position, 0.0, 1.0);\n"
+        "   texcoord = in_texcoord;\n"
+        "}\n";
+
+    const char *fragSource =
+        "precision mediump float;\n"
+        "varying vec2 texcoord;\n"
+        "uniform sampler2D texture;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   gl_FragColor = texture2D(texture, texcoord);\n"
+        "}\n";
+
+    const char *vertSourceYuv = "attribute vec4 vPosition;\n"
+        "attribute vec2 vYuvTexCoords;\n"
+        "varying vec2 yuvTexCoords;\n"
+        "void main() {\n"
+        "  yuvTexCoords = vYuvTexCoords;\n"
+        "  gl_Position = vPosition;\n"
+        "}\n";
+
+    const char *fragSourceYuv = "#extension GL_OES_EGL_image_external : require\n"
+        "precision mediump float;\n"
+        "uniform samplerExternalOES yuvTexSampler;\n"
+        "varying vec2 yuvTexCoords;\n"
+        "void main() {\n"
+        "  gl_FragColor = texture2D(yuvTexSampler, yuvTexCoords);\n"
+        "}\n";
+    bool mIsInited = false;
+    GLint mPosition;
+    GLint mYuvPosition;
+    GLint mYuvTexSampler;
+    GLubyte *mShmData = nullptr;
+    GLint mProgram = 0;
+    Vector<Vector<uint8_t>> mMemoryBuffer;
 };
 
 } // namespace android

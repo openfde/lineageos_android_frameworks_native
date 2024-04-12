@@ -189,7 +189,10 @@ cc_defaults {
 
     cppflags: [
         "-Wextra",
+        "-Wno-macro-redefined", //todo!!!
         "-DDEBUG_ONLY_CODE=0",
+        "-DGL_GLEXT_PROTOTYPES",
+        "-DEGL_EGLEXT_PROTOTYPES",
     ],
 
     product_variables: {
