@@ -205,6 +205,7 @@ class CpuConsumer : public ConsumerBase
     GLubyte *mShmData = nullptr;
     GLint mProgram = 0;
     Vector<Vector<uint8_t>> mMemoryBuffer;
+    bool mCropImage = false;
 };
 
 } // namespace android

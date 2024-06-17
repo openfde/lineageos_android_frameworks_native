@@ -232,6 +232,19 @@ status_t CpuConsumer::initEgl(size_t width, size_t height, const bool isPossibly
     }
     mMemoryBuffer.insertAt(0, mMaxLockedBuffers);
     mIsInited = true;
+    char lastApp[PROPERTY_VALUE_MAX];
+    char packages[PROPERTY_VALUE_MAX];
+    if (property_get("fde.last_app_use_camera", lastApp, "none") > 0){
+        if (property_get("fde.apps_crop_camera_image", packages, " ") > 0){
+            const char *found = strstr(packages, lastApp);
+            if (found != NULL) {
+                mCropImage = true;
+                CC_LOGW("The application '%s' is contained in the list.\n", lastApp);
+            } else {
+                CC_LOGW("The application '%s' is not found in the list.\n", lastApp);
+            }
+        }
+    }
     return OK;
 }
 
@@ -394,6 +407,22 @@ status_t CpuConsumer::lockBufferItem(const BufferItem& item, LockedBuffer* outBu
             glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, mShmData);
             checkGlError("glReadPixels");
 
+            if(mCropImage){
+                uint32_t* tmpp = new uint32_t[width * width];
+                uint32_t* pp = tmpp;
+                for (size_t i = (width + height) / 2; i >= (width -height) / 2; i--) {
+                    for (size_t j = 0; j < height; j++) {
+                        *pp++ = ((uint32_t *)mShmData)[i + j * width];
+                    }
+                }
+                pp = tmpp;
+                memset(mShmData, 0, height * width * 4);
+                for (size_t i = 0; i < height; i++) {
+                    memcpy(mShmData + ((width - height) / 2 + width * i) * 4, pp, height * 4);
+                    pp += height;
+                }
+                delete[] tmpp;
+            }
             mb.resize(width * height * 3 / 2);
             //maybe have other YUV format input todo!!!
             ConvertRGB32ToPlanar((uint8_t *)mb.editArray(), static_cast<uint32_t>(ycbcr.ystride), static_cast<uint32_t>(ycbcr.cstride),
