@@ -79,7 +79,7 @@ status_t InputManager::stop() {
     return status;
 }
 
-sp<InputReaderInterface> InputManager::getReader() {
+sp<InputReader> InputManager::getReader() {
     return mReader;
 }
 

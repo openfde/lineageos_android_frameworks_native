@@ -68,7 +68,16 @@ using android::base::StringPrintf;
 
 namespace android {
 
-static constexpr bool DEBUG = false;
+
+#define ADD_EVENT(type_, code_, value_)            \
+    event[n].time.tv_sec = rt.tv_sec;              \
+    event[n].time.tv_usec = rt.tv_nsec / 1000;     \
+    event[n].type = type_;                         \
+    event[n].code = code_;                         \
+    event[n].value = value_;                       \
+    n++;
+
+static constexpr bool DEBUG = true;
 
 static const char* DEVICE_PATH = "/dev/input";
 // v4l2 devices go directly into /dev
@@ -403,6 +412,57 @@ void EventHub::getConfiguration(int32_t deviceId, PropertyMap* outConfiguration)
         *outConfiguration = *device->configuration;
     } else {
         outConfiguration->clear();
+    }
+}
+
+void EventHub::injectMotionEvent(MotionEvent * motion, int32_t syncMode, int32_t timeoutMillis,
+    int32_t policyFlags) const{
+    switch (motion->getAction())
+    {
+        case AMOTION_EVENT_ACTION_DOWN:
+        {
+            struct input_event event[6];
+            struct timespec rt;
+            unsigned n = 0;
+            ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
+            ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 1);
+            ADD_EVENT(EV_ABS, ABS_MT_POSITION_X, (int)motion->getX(0));
+            ADD_EVENT(EV_ABS, ABS_MT_POSITION_Y, (int)motion->getY(0));
+            ADD_EVENT(EV_ABS, ABS_MT_PRESSURE, 50);
+            ADD_EVENT(EV_SYN, SYN_REPORT, 0);
+            Device* device = getDeviceByPathLocked(INPUT_PIPE_NAME[0]);
+            write(device->fd, &event, sizeof(event));
+        }
+            break;    
+        case AMOTION_EVENT_ACTION_UP:
+        {
+            struct input_event event[3];
+            struct timespec rt;
+            unsigned int n = 0;
+            ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
+            ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, -1);
+            ADD_EVENT(EV_SYN, SYN_REPORT, 0);
+            Device* device = getDeviceByPathLocked(INPUT_PIPE_NAME[0]);
+            write(device->fd, &event, sizeof(event));
+        }
+            break;
+        case AMOTION_EVENT_ACTION_MOVE:
+        {
+            struct input_event event[6];
+            struct timespec rt;
+            unsigned n = 0;
+            ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
+            ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 1);
+            ADD_EVENT(EV_ABS, ABS_MT_POSITION_X, (int)motion->getX(0));
+            ADD_EVENT(EV_ABS, ABS_MT_POSITION_Y, (int)motion->getY(0));
+            ADD_EVENT(EV_ABS, ABS_MT_PRESSURE, 50);
+            ADD_EVENT(EV_SYN, SYN_REPORT, 0);
+            Device* device = getDeviceByPathLocked(INPUT_PIPE_NAME[0]);
+            write(device->fd, &event, sizeof(event));
+        }
+            break;
+        default:
+            break;
     }
 }
 
