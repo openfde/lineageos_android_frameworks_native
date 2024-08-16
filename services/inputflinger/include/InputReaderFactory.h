@@ -18,11 +18,11 @@
 
 namespace android {
 
-class InputReaderInterface;
+class InputReader;
 class InputReaderPolicyInterface;
 class InputListenerInterface;
 
-sp<InputReaderInterface> createInputReader(
+sp<InputReader> createInputReader(
         const sp<InputReaderPolicyInterface>& policy,
         const sp<InputListenerInterface>& listener);
 

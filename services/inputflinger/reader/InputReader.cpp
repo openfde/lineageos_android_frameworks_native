@@ -633,6 +633,11 @@ bool InputReader::canDispatchToDisplay(int32_t deviceId, int32_t displayId) {
     return *associatedDisplayId == displayId;
 }
 
+void InputReader::injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+    int32_t policyFlags){
+    mEventHub.get()->injectMotionEvent(event, syncMode, timeoutMillis, policyFlags);
+}
+
 void InputReader::dump(std::string& dump) {
     AutoMutex _l(mLock);
 

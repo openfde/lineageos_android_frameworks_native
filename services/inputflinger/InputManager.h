@@ -25,6 +25,7 @@
 #include "InputReaderBase.h"
 
 #include <InputDispatcherInterface.h>
+#include <reader/include/InputReader.h>
 #include <InputDispatcherPolicyInterface.h>
 #include <input/ISetInputWindowsListener.h>
 #include <input/Input.h>
@@ -72,7 +73,7 @@ public:
     virtual status_t stop() = 0;
 
     /* Gets the input reader. */
-    virtual sp<InputReaderInterface> getReader() = 0;
+    virtual sp<InputReader> getReader() = 0;
 
     /* Gets the input dispatcher. */
     virtual sp<InputDispatcherInterface> getDispatcher() = 0;
@@ -90,7 +91,7 @@ public:
     virtual status_t start();
     virtual status_t stop();
 
-    virtual sp<InputReaderInterface> getReader();
+    virtual sp<InputReader> getReader();
     virtual sp<InputClassifierInterface> getClassifier();
     virtual sp<InputDispatcherInterface> getDispatcher();
 
@@ -103,7 +104,7 @@ public:
     void setMotionClassifierEnabled(bool enabled);
 
 private:
-    sp<InputReaderInterface> mReader;
+    sp<InputReader> mReader;
 
     sp<InputClassifierInterface> mClassifier;
 

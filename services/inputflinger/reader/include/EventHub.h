@@ -171,6 +171,9 @@ public:
 
     virtual void getConfiguration(int32_t deviceId, PropertyMap* outConfiguration) const = 0;
 
+    virtual void injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+        int32_t policyFlags) const = 0;
+
     virtual status_t getAbsoluteAxisInfo(int32_t deviceId, int axis,
                                          RawAbsoluteAxisInfo* outAxisInfo) const = 0;
 
@@ -267,6 +270,9 @@ public:
     virtual int32_t getDeviceControllerNumber(int32_t deviceId) const override;
 
     virtual void getConfiguration(int32_t deviceId, PropertyMap* outConfiguration) const override;
+
+    virtual void injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+        int32_t policyFlags) const override;
 
     virtual status_t getAbsoluteAxisInfo(int32_t deviceId, int axis,
                                          RawAbsoluteAxisInfo* outAxisInfo) const override;

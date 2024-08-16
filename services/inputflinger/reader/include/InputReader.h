@@ -83,16 +83,10 @@ public:
 
     virtual bool canDispatchToDisplay(int32_t deviceId, int32_t displayId) override;
 
-protected:
-    // These members are protected so they can be instrumented by test cases.
-    virtual std::shared_ptr<InputDevice> createDeviceLocked(
-            int32_t deviceId, const InputDeviceIdentifier& identifier);
+    virtual void injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+        int32_t policyFlags) override;
 
-    // With each iteration of the loop, InputReader reads and processes one incoming message from
-    // the EventHub.
-    void loopOnce();
-
-    class ContextImpl : public InputReaderContext {
+        class ContextImpl : public InputReaderContext {
         InputReader* mReader;
         IdGenerator mIdGenerator;
 
@@ -116,6 +110,20 @@ protected:
     } mContext;
 
     friend class ContextImpl;
+    
+    std::shared_ptr<EventHubInterface> mEventHub;
+
+
+protected:
+    // These members are protected so they can be instrumented by test cases.
+    virtual std::shared_ptr<InputDevice> createDeviceLocked(
+            int32_t deviceId, const InputDeviceIdentifier& identifier);
+
+    // With each iteration of the loop, InputReader reads and processes one incoming message from
+    // the EventHub.
+    void loopOnce();
+
+    
 
 private:
     std::unique_ptr<InputThread> mThread;
@@ -127,7 +135,6 @@ private:
     // This could be unique_ptr, but due to the way InputReader tests are written,
     // it is made shared_ptr here. In the tests, an EventHub reference is retained by the test
     // in parallel to passing it to the InputReader.
-    std::shared_ptr<EventHubInterface> mEventHub;
     sp<InputReaderPolicyInterface> mPolicy;
     sp<QueuedInputListener> mQueuedListener;
 
