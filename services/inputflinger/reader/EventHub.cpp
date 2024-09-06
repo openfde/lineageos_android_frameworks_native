@@ -499,13 +499,13 @@ status_t EventHub::getAbsoluteAxisInfo(int32_t deviceId, int axis,
 
             switch(axis) {
             case ABS_MT_POSITION_X:
-                info.maximum = width - 1; //fix wayland_touch device XScale is not 1.0
+                info.maximum = width - 1; //Subtracting 1 is to fix the issue where 1 pixel is missing in the x direction after the mouse press event transitions to a touch event
                 break;
             case ABS_X:
                 info.maximum = width;
                 break;
             case ABS_MT_POSITION_Y:
-                info.maximum = height - 1; //fix wayland_touch device YScale is not 1.0
+                info.maximum = height - 1; //Subtracting 1 is to fix the issue where 1 pixel is missing in the y direction after the mouse press event transitions to a touch event
                 break;
             case ABS_Y:
                 info.maximum = height;
