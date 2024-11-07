@@ -505,6 +505,7 @@ void BBinder::setRequestingSid(bool requestingSid)
     LOG_ALWAYS_FATAL_IF(mParceled,
                         "setRequestingSid() should not be called after a binder object "
                         "is parceled/sent to another process");
+	requestingSid = false; // HACKED
 
     Extras* e = mExtras.load(std::memory_order_acquire);
 
