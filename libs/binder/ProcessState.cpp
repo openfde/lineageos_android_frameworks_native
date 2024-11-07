@@ -209,7 +209,7 @@ bool ProcessState::becomeContextManager()
     std::unique_lock<std::mutex> _l(mLock);
 
     flat_binder_object obj {
-        .flags = FLAT_BINDER_FLAG_TXN_SECURITY_CTX,
+        //.flags = FLAT_BINDER_FLAG_TXN_SECURITY_CTX,
     };
 
     int result = ioctl(mDriverFD, BINDER_SET_CONTEXT_MGR_EXT, &obj);
