@@ -45,6 +45,7 @@
 
 #include <aidl/android/hardware/graphics/common/Transform.h>
 #include <optional>
+#include <vendor/openfde/display/1.1/IOpenfdeDisplay.h>
 
 // TODO(b/129481165): remove the #pragma below and fix conversion issues
 #pragma clang diagnostic pop // ignored "-Wconversion -Wextra"
@@ -55,6 +56,8 @@ struct ComposerCallback;
 } // namespace HWC2
 
 namespace Hwc2 {
+
+using namespace vendor::openfde::display;
 
 namespace types = hardware::graphics::common;
 
@@ -278,6 +281,10 @@ public:
 
     virtual Error getClientTargetProperty(
             Display display, V3_0::ClientTargetPropertyWithBrightness* outClientTargetProperty) = 0;
+
+    // OpenfdeDisplay HAL 1.0
+    virtual Error setLayerName(Display display, Layer layer, std::string name) = 0;
+
 
     // AIDL Composer
     virtual Error setLayerBrightness(Display display, Layer layer, float brightness) = 0;

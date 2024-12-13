@@ -309,6 +309,8 @@ void HidlComposer::registerCallback(const sp<IComposerCallback>& callback) {
     if (!ret.isOk()) {
         ALOGE("failed to register IComposerCallback");
     }
+
+    mOpenfdeDisplay = V1_0::IOpenfdeDisplay::getService();
 }
 
 Error HidlComposer::executeCommands(Display) {
@@ -384,6 +386,7 @@ Error HidlComposer::createLayer(Display display, Layer* outLayer) {
 }
 
 Error HidlComposer::destroyLayer(Display display, Layer layer) {
+    mLayersZMap.erase(layer);
     auto ret = mClient->destroyLayer(display, layer);
     return unwrapRet(ret);
 }
@@ -615,6 +618,8 @@ Error HidlComposer::setClientTarget(Display display, uint32_t slot, const sp<Gra
 
     const native_handle_t* handle = nullptr;
     if (target.get()) {
+        if (mOpenfdeDisplay)
+            mOpenfdeDisplay->setTargetLayerHandleInfo(target->getPixelFormat(), target->getStride());
         handle = target->getNativeBuffer()->handle;
     }
 
@@ -885,6 +890,7 @@ Error HidlComposer::setLayerZOrder(Display display, Layer layer, uint32_t z) {
     mWriter.selectDisplay(display);
     mWriter.selectLayer(layer);
     mWriter.setLayerZOrder(z);
+    mLayersZMap[layer] = z;
     return Error::NONE;
 }
 
@@ -1406,6 +1412,17 @@ Error HidlComposer::getClientTargetProperty(
     outClientTargetProperty->brightness = 1.f;
     outClientTargetProperty->dimmingStage = DimmingStage::NONE;
     return Error::NONE;
+}
+
+Error HidlComposer::setLayerName(Display, Layer layer, std::string name) {
+    if (!mOpenfdeDisplay) {
+        return Error::UNSUPPORTED;
+    }
+    if (mLayersNameMap[mLayersZMap[layer]] != name) {
+        mLayersNameMap[mLayersZMap[layer]] = name;
+        return mOpenfdeDisplay->setLayerName(mLayersZMap[layer], name);
+    } else
+        return Error::NONE;
 }
 
 Error HidlComposer::setLayerBrightness(Display, Layer, float) {

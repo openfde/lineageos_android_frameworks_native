@@ -38,6 +38,8 @@ cc_defaults {
         "libSurfaceFlingerProp",
         "libui",
         "libutils",
+        "vendor.openfde.display@1.0",
+        "vendor.openfde.display@1.1",
         "server_configurable_flags",
     ],
     static_libs: [
@@ -106,6 +108,12 @@ cc_library {
     export_include_dirs: ["include"],
     shared_libs: [
         "server_configurable_flags",
+        "vendor.openfde.display@1.0",
+        "vendor.openfde.display@1.1",
+    ],
+    export_shared_lib_headers: [
+        "vendor.openfde.display@1.0",
+        "vendor.openfde.display@1.1",
     ],
 }
 

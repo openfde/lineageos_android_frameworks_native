@@ -1540,6 +1540,12 @@ Error AidlComposer::getClientTargetProperty(
     return error;
 }
 
+Error AidlComposer::setLayerName(Display, Layer layer, std::string name) {
+    (void)layer;
+    (void)name;
+    return Error::NONE;
+}
+
 Error AidlComposer::setLayerBrightness(Display display, Layer layer, float brightness) {
     Error error = Error::NONE;
     mMutex.lock_shared();

@@ -349,6 +349,8 @@ public:
     [[nodiscard]] virtual hal::Error setLayerGenericMetadata(const std::string& name,
                                                              bool mandatory,
                                                              const std::vector<uint8_t>& value) = 0;
+    // OpenfdeDisplay HAL 1.0
+    [[clang::warn_unused_result]] virtual hal::Error setLayerName(std::string name) = 0;
 
     // AIDL HAL
     [[nodiscard]] virtual hal::Error setBrightness(float brightness) = 0;
@@ -399,6 +401,8 @@ public:
     // Composer HAL 2.4
     hal::Error setLayerGenericMetadata(const std::string& name, bool mandatory,
                                        const std::vector<uint8_t>& value) override;
+    // OpenfdeDisplay HAL 1.0
+    hal::Error setLayerName(std::string name) override;
 
     // AIDL HAL
     hal::Error setBrightness(float brightness) override;

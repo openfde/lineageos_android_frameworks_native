@@ -473,6 +473,12 @@ void OutputLayer::writeOutputDependentGeometryStateToHWC(HWC2::Layer* hwcLayer,
               to_string(error).c_str(), static_cast<int32_t>(error));
     }
 
+    if (auto error = hwcLayer->setLayerName(getLayerFE().getDebugName());
+            error != hal::Error::NONE) {
+            ALOGE("[%s] Failed to set layer name: %s (%d)", getLayerFE().getDebugName(),
+                  to_string(error).c_str(), static_cast<int32_t>(error));
+    }
+
     // Solid-color layers and overridden buffers should always use an identity transform.
     const auto bufferTransform = (requestedCompositionType != Composition::SOLID_COLOR &&
                                   getState().overrideInfo.buffer == nullptr)

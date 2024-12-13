@@ -223,6 +223,8 @@ public:
             Display display,
             aidl::android::hardware::graphics::composer3::ClientTargetPropertyWithBrightness*
                     outClientTargetProperty) override;
+    // OpenfdeDisplay HAL 1.0
+    Error setLayerName(Display display, Layer layer, std::string name) override;
 
     // AIDL Composer HAL
     Error setLayerBrightness(Display display, Layer layer, float brightness) override;

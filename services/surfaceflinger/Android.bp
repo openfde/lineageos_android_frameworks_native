@@ -86,6 +86,8 @@ cc_defaults {
         "libinput",
         "libutils",
         "libSurfaceFlingerProp",
+        "vendor.openfde.display@1.0",
+        "vendor.openfde.display@1.1",
         "server_configurable_flags",
     ],
     static_libs: [
@@ -127,6 +129,8 @@ cc_defaults {
         "android.hardware.graphics.composer@2.4",
         "libpowermanager",
         "libhidlbase",
+        "vendor.openfde.display@1.0",
+        "vendor.openfde.display@1.1",
     ],
     // TODO (marissaw): this library is not used by surfaceflinger. This is here so
     // the library compiled in a way that is accessible to system partition when running
