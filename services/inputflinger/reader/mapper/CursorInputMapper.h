@@ -50,6 +50,26 @@ private:
     void clearRelativeAxes();
 };
 
+/* Keeps track of cursor position. */
+
+class CursorPositionAccumulator {
+public:
+    CursorPositionAccumulator();
+    void reset(InputDeviceContext& deviceContext);
+
+    void process(const RawEvent* rawEvent);
+    void finishSync();
+
+    inline int32_t getX() const { return mX; }
+    inline int32_t getY() const { return mY; }
+
+private:
+    int32_t mX;
+    int32_t mY;
+
+    void clearPosition();
+};
+
 class CursorInputMapper : public InputMapper {
 public:
     template <class T, class... Args>
@@ -97,6 +117,7 @@ private:
 
     CursorButtonAccumulator mCursorButtonAccumulator;
     CursorMotionAccumulator mCursorMotionAccumulator;
+    CursorPositionAccumulator mCursorPositionAccumulator;
     CursorScrollAccumulator mCursorScrollAccumulator;
 
     int32_t mSource;
