@@ -139,7 +139,14 @@ sp<Surface> SurfaceControl::generateSurfaceLocked()
     uint32_t ignore;
     auto flags = mCreateFlags & (ISurfaceComposerClient::eCursorWindow |
                                  ISurfaceComposerClient::eOpaque);
-    mBbqChild = mClient->createSurface(String8("bbq-wrapper"), 0, 0, mFormat,
+    std::string name;
+    size_t pos = mName.find('#');
+    if (pos != std::string::npos) {
+        name = mName.substr(0, pos);
+    } else {
+        name = mName;
+    }
+    mBbqChild = mClient->createSurface(String8(name.c_str()), 0, 0, mFormat,
                                        flags, mHandle, {}, &ignore);
     mBbq = sp<BLASTBufferQueue>::make("bbq-adapter", mBbqChild, mWidth, mHeight, mFormat);
 
