@@ -351,6 +351,7 @@ public:
                                                              const std::vector<uint8_t>& value) = 0;
     // OpenfdeDisplay HAL 1.0
     [[clang::warn_unused_result]] virtual hal::Error setLayerName(std::string name) = 0;
+    [[clang::warn_unused_result]] virtual hal::Error setLayerHandleInfo(const sp<GraphicBuffer>& buffer) = 0;
 
     // AIDL HAL
     [[nodiscard]] virtual hal::Error setBrightness(float brightness) = 0;
@@ -403,6 +404,7 @@ public:
                                        const std::vector<uint8_t>& value) override;
     // OpenfdeDisplay HAL 1.0
     hal::Error setLayerName(std::string name) override;
+    hal::Error setLayerHandleInfo(const sp<GraphicBuffer>& buffer) override;
 
     // AIDL HAL
     hal::Error setBrightness(float brightness) override;

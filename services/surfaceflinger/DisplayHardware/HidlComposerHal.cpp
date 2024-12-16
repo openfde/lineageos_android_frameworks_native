@@ -311,6 +311,7 @@ void HidlComposer::registerCallback(const sp<IComposerCallback>& callback) {
     }
 
     mOpenfdeDisplay = V1_0::IOpenfdeDisplay::getService();
+    mOpenfdeDisplay_1 = V1_1::IOpenfdeDisplay::castFrom(mOpenfdeDisplay);
 }
 
 Error HidlComposer::executeCommands(Display) {
@@ -620,6 +621,8 @@ Error HidlComposer::setClientTarget(Display display, uint32_t slot, const sp<Gra
     if (target.get()) {
         if (mOpenfdeDisplay)
             mOpenfdeDisplay->setTargetLayerHandleInfo(target->getPixelFormat(), target->getStride());
+        if (mOpenfdeDisplay_1)
+            mOpenfdeDisplay_1->setTargetLayerSize(target->getWidth(), target->getHeight());
         handle = target->getNativeBuffer()->handle;
     }
 
@@ -1424,6 +1427,28 @@ Error HidlComposer::setLayerName(Display, Layer layer, std::string name) {
     } else
         return Error::NONE;
 }
+
+Error HidlComposer::setLayerHandleInfo(Display, Layer layer, const sp<GraphicBuffer>& buffer) {
+    Error error;
+    if (!mOpenfdeDisplay)
+        return Error::UNSUPPORTED;
+
+    if (buffer.get() &&
+            mLayersHandleMap[mLayersZMap[layer]] != buffer->getNativeBuffer()->handle) {
+        mLayersHandleMap[mLayersZMap[layer]] = buffer->getNativeBuffer()->handle;
+        error = mOpenfdeDisplay->setLayerHandleInfo(mLayersZMap[layer],
+                                                    buffer->getPixelFormat(),
+                                                    buffer->getStride());
+        if (error != Error::NONE)
+            return error;
+
+        if (mOpenfdeDisplay_1)
+            mOpenfdeDisplay_1->setLayerSize(mLayersZMap[layer],
+                                            buffer->getWidth(), buffer->getHeight());
+    }
+    return Error::NONE;
+}
+
 
 Error HidlComposer::setLayerBrightness(Display, Layer, float) {
     return Error::NONE;

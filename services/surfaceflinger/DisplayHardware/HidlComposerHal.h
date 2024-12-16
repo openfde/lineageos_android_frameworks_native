@@ -330,6 +330,7 @@ public:
                     outClientTargetProperty) override;
     // OpenfdeDisplay HAL 1.0
     Error setLayerName(Display display, Layer layer, std::string name) override;
+    Error setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer) override;
 
     // AIDL Composer HAL
     Error setLayerBrightness(Display display, Layer layer, float brightness) override;
@@ -391,8 +392,10 @@ private:
     CommandReader mReader;
 
     sp<V1_0::IOpenfdeDisplay> mOpenfdeDisplay;
+    sp<V1_1::IOpenfdeDisplay> mOpenfdeDisplay_1;
     std::map<Layer, int32_t> mLayersZMap;
     std::map<int32_t, std::string> mLayersNameMap;
+    std::map<int32_t, const native_handle_t*> mLayersHandleMap;
 };
 
 } // namespace android::Hwc2

@@ -1540,11 +1540,20 @@ Error AidlComposer::getClientTargetProperty(
     return error;
 }
 
-Error AidlComposer::setLayerName(Display, Layer layer, std::string name) {
+Error AidlComposer::setLayerName(Display display, Layer layer, std::string name) {
+    (void)display;
     (void)layer;
     (void)name;
     return Error::NONE;
 }
+
+Error AidlComposer::setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer){
+    (void)display;
+    (void)layer;
+    (void)buffer;
+    return Error::NONE;
+}
+
 
 Error AidlComposer::setLayerBrightness(Display display, Layer layer, float brightness) {
     Error error = Error::NONE;

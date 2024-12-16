@@ -1011,6 +1011,13 @@ Error Layer::setLayerName(std::string name)
     return static_cast<Error>(intError);
 }
 
+Error Layer::setLayerHandleInfo(const sp<GraphicBuffer>& buffer)
+{
+    auto intError = mComposer.setLayerHandleInfo(mDisplay->getId(), mId, buffer);
+    return static_cast<Error>(intError);
+}
+
+
 // AIDL HAL
 Error Layer::setBrightness(float brightness) {
     if (CC_UNLIKELY(!mDisplay)) {

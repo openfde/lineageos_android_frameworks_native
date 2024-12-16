@@ -284,6 +284,7 @@ public:
 
     // OpenfdeDisplay HAL 1.0
     virtual Error setLayerName(Display display, Layer layer, std::string name) = 0;
+    virtual Error setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer) = 0;
 
 
     // AIDL Composer

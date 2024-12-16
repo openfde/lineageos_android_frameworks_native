@@ -225,6 +225,7 @@ public:
                     outClientTargetProperty) override;
     // OpenfdeDisplay HAL 1.0
     Error setLayerName(Display display, Layer layer, std::string name) override;
+    Error setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer) override;
 
     // AIDL Composer HAL
     Error setLayerBrightness(Display display, Layer layer, float brightness) override;
