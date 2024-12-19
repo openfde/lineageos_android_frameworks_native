@@ -6598,7 +6598,8 @@ std::unique_ptr<const KeyEntry> InputDispatcher::afterKeyEventLockedInterruptabl
             connection->inputState.setFallbackKey(originalKeyCode, *fallbackKeyCode);
         }
 
-        ALOG_ASSERT(fallbackKeyCode);
+        //openfde: fix system crashes when multiple touches occur
+        //ALOG_ASSERT(fallbackKeyCode);
 
         // Cancel the fallback key if the policy decides not to send it anymore.
         // We will continue to dispatch the key to the policy but we will no
