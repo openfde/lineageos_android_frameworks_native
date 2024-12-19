@@ -648,11 +648,11 @@ void EventHub::Device::populateAbsoluteAxisStates() {
             char property[PROPERTY_VALUE_MAX];
             int width = 0;
             int height = 0;
-            if (property_get("waydroid.display_width", property, nullptr) > 0) {
+            if (property_get("openfde.display_width", property, nullptr) > 0) {
                 width = atoi(property);
             }
 
-            if (property_get("waydroid.display_height", property, nullptr) > 0) {
+            if (property_get("openfde.display_height", property, nullptr) > 0) {
                 height = atoi(property);
             }
 
