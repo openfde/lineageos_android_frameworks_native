@@ -93,6 +93,7 @@ class CpuConsumer : public ConsumerBase
     // how many buffers can be locked for user access at the same time.
     CpuConsumer(const sp<IGraphicBufferConsumer>& bq,
             size_t maxLockedBuffers, bool controlledByApp = false);
+    ~CpuConsumer();
 
     // Gets the next graphics buffer from the producer and locks it for CPU use,
     // filling out the passed-in locked buffer structure with the native pointer
@@ -140,12 +141,17 @@ class CpuConsumer : public ConsumerBase
 
     size_t findAcquiredBufferLocked(uintptr_t id) const;
 
-    status_t lockBufferItem(const BufferItem& item, LockedBuffer* outBuffer) const;
+    status_t lockBufferItem(const BufferItem& item, LockedBuffer* outBuffer);
+
+    status_t initEgl(size_t width, size_t height, const bool isPossiblyYUV);
+    void closeEgl();
 
     Vector<AcquiredBuffer> mAcquiredBuffers;
 
     // Count of currently locked buffers
     size_t mCurrentLockedBuffers;
+    Vector<Vector<uint8_t>> mMemoryBuffer;
+    bool mIsInited = false;
 };
 
 } // namespace android

@@ -255,6 +255,9 @@ cc_library_shared {
 cc_library_shared {
     name: "libGLESv2",
     defaults: ["gles_libs_defaults"],
+    header_abi_checker: {
+        enabled: false,
+    },
     llndk: {
         symbol_file: "libGLESv2.map.txt",
         export_llndk_headers: ["gl_headers"],
@@ -263,6 +266,10 @@ cc_library_shared {
     },
     srcs: ["GLES2/gl2.cpp"],
     cflags: ["-DLOG_TAG=\"libGLESv2\""],
+    stubs: {
+        symbol_file: "libGLESv2.map.txt",
+        versions: ["29",],
+    },
 
     // Bug: http://b/133874658  Disable native_coverage as we investigate a
     // crash in surfaceflinger on coverage-enabled cuttlefish builds.
