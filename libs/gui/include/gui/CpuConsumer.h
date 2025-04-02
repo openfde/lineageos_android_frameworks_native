@@ -152,6 +152,7 @@ class CpuConsumer : public ConsumerBase
     size_t mCurrentLockedBuffers;
     Vector<Vector<uint8_t>> mMemoryBuffer;
     bool mIsInited = false;
+    bool mCropImage = false;
 };
 
 } // namespace android
