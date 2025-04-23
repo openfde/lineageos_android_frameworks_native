@@ -83,6 +83,7 @@
 #include "skia/debug/SkiaMemoryReporter.h"
 #include "skia/filters/StretchShaderFactory.h"
 #include "system/graphics-base-v1.0.h"
+#include <cutils/properties.h>
 
 namespace {
 
@@ -741,6 +742,10 @@ void SkiaRenderEngine::drawLayersInternal(
         }
     }
 
+    char property_value[92];
+    property_get("flush.background.layer", property_value, "true");
+    const bool flushsurfacebackground = !strcmp(property_value, "true");
+
     AutoSaveRestore surfaceAutoSaveRestore(canvas);
     // Clear the entire canvas with a transparent black to prevent ghost images.
     canvas->clear(SK_ColorTRANSPARENT);
@@ -754,6 +759,12 @@ void SkiaRenderEngine::drawLayersInternal(
 
         if (kPrintLayerSettings) {
             logSettings(layer);
+        }
+
+        if (layer.name.find("Background for SurfaceView") != std::string::npos) {
+            if(flushsurfacebackground) {
+                skgpu::ganesh::Flush(activeSurface);
+            }
         }
 
         sk_sp<SkImage> blurInput;
@@ -941,6 +952,7 @@ void SkiaRenderEngine::drawLayersInternal(
         SkPaint paint;
         if (layer.source.buffer.buffer) {
             ATRACE_NAME("DrawImage");
+            ALOGE("DrawImage layer name = %s", layer.name.c_str());
             validateInputBufferUsage(layer.source.buffer.buffer->getBuffer());
             const auto& item = layer.source.buffer;
             auto imageTextureRef = getOrCreateBackendTexture(item.buffer->getBuffer(), false);
@@ -1126,6 +1138,14 @@ void SkiaRenderEngine::drawLayersInternal(
         } else {
             canvas->drawRect(bounds.rect(), paint);
         }
+
+
+        if (layer.name.find("Background for SurfaceView") != std::string::npos) {
+            if(flushsurfacebackground) {
+                skgpu::ganesh::Flush(activeSurface);
+            }
+        }
+
         if (kFlushAfterEveryLayer) {
             ATRACE_NAME("flush surface");
             skgpu::ganesh::Flush(activeSurface);
