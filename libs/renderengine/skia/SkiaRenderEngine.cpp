@@ -952,7 +952,6 @@ void SkiaRenderEngine::drawLayersInternal(
         SkPaint paint;
         if (layer.source.buffer.buffer) {
             ATRACE_NAME("DrawImage");
-            ALOGE("DrawImage layer name = %s", layer.name.c_str());
             validateInputBufferUsage(layer.source.buffer.buffer->getBuffer());
             const auto& item = layer.source.buffer;
             auto imageTextureRef = getOrCreateBackendTexture(item.buffer->getBuffer(), false);
