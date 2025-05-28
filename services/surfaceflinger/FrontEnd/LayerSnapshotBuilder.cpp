@@ -981,7 +981,7 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
     parentBounds = snapshot.localTransform.inverse().transform(parentBounds);
     snapshot.geomLayerBounds =
             (requested.externalTexture) ? snapshot.bufferSize.toFloatRect() : parentBounds;
-    if (!requested.crop.isEmpty()) {
+    if (!requested.crop.isEmpty() && !(snapshot.geomLayerBounds.left == 0 && snapshot.geomLayerBounds.right > requested.crop.toFloatRect().right)) {
         snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(requested.crop.toFloatRect());
     }
     snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(parentBounds);
