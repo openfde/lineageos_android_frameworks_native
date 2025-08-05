@@ -424,8 +424,13 @@ void EventHub::injectMotionEvent(MotionEvent * motion, int32_t syncMode, int32_t
             struct input_event event[6];
             struct timespec rt;
             unsigned n = 0;
-            ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
-            ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 1);
+            if(motion->getSource() == 0x1002){
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 2);
+            } else {
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 2);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 3);
+            }
             ADD_EVENT(EV_ABS, ABS_MT_POSITION_X, (int)motion->getX(0));
             ADD_EVENT(EV_ABS, ABS_MT_POSITION_Y, (int)motion->getY(0));
             ADD_EVENT(EV_ABS, ABS_MT_PRESSURE, 50);
@@ -439,8 +444,13 @@ void EventHub::injectMotionEvent(MotionEvent * motion, int32_t syncMode, int32_t
             struct input_event event[3];
             struct timespec rt;
             unsigned int n = 0;
-            ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
-            ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, -1);
+            if(motion->getSource() == 0x1002){
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, -1);
+            } else {
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 2);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, -1);
+            }
             ADD_EVENT(EV_SYN, SYN_REPORT, 0);
             Device* device = getDeviceByPathLocked(INPUT_PIPE_NAME[0]);
             write(device->fd, &event, sizeof(event));
@@ -451,8 +461,13 @@ void EventHub::injectMotionEvent(MotionEvent * motion, int32_t syncMode, int32_t
             struct input_event event[6];
             struct timespec rt;
             unsigned n = 0;
-            ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
-            ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 1);
+            if(motion->getSource() == 0x1002){
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 2);
+            } else {
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 2);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 3);
+            }
             ADD_EVENT(EV_ABS, ABS_MT_POSITION_X, (int)motion->getX(0));
             ADD_EVENT(EV_ABS, ABS_MT_POSITION_Y, (int)motion->getY(0));
             ADD_EVENT(EV_ABS, ABS_MT_PRESSURE, 50);
