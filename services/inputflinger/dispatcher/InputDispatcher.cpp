@@ -817,6 +817,14 @@ sp<InputWindowHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t display
     const std::vector<sp<InputWindowHandle>> windowHandles = getWindowHandlesLocked(displayId);
     ALOGD("Window count: %zu", windowHandles.size());
 
+
+    const std::vector<sp<InputWindowHandle>> ws = getValueByKey(mWindowHandlesByDisplay, displayId);
+    for (size_t i = 0; i < ws.size(); ++i) {
+        const sp<InputWindowHandle>& w = ws[i];
+        const InputWindowInfo* info = w->getInfo();
+        ALOGD("[%zu] '%s' (id=%d, token=%p)", i, info->name.c_str(), info->id, info->token.get());
+    }
+
     for (size_t i = 0; i < windowHandles.size(); ++i) {
         const sp<InputWindowHandle>& windowHandle = windowHandles[i];
 
@@ -4216,6 +4224,16 @@ void InputDispatcher::dumpDispatchStateLocked(std::string& dump) {
     }
 
     if (!mWindowHandlesByDisplay.empty()) {
+
+        const std::vector<sp<InputWindowHandle>> ws = getValueByKey(mWindowHandlesByDisplay, 0);
+        for (size_t i = 0; i < ws.size(); ++i) {
+            const sp<InputWindowHandle>& w = ws[i];
+            const InputWindowInfo* info = w->getInfo();
+            ALOGD("dumpDispatchStateLocked [%zu] '%s' (id=%d, token=%p)", i, info->name.c_str(), info->id, info->token.get());
+        }
+
+
+
         for (auto& it : mWindowHandlesByDisplay) {
             const std::vector<sp<InputWindowHandle>> windowHandles = it.second;
             dump += StringPrintf(INDENT "Display: %" PRId32 "\n", it.first);
