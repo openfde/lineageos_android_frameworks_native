@@ -17,7 +17,7 @@
 #define LOG_TAG "InputDispatcher"
 #define ATRACE_TAG ATRACE_TAG_INPUT
 
-#define LOG_NDEBUG 1
+#define LOG_NDEBUG 0
 
 #include <android-base/chrono_utils.h>
 #include <android-base/logging.h>
@@ -3371,6 +3371,8 @@ void InputDispatcher::enqueueDispatchEntryLocked(const std::shared_ptr<Connectio
                    << inputTarget << " connection: " << connection->getInputChannelName()
                    << " entry: " << eventEntry->getDescription();
     }
+    ALOGE("enqueueDispatchEntryLocked connection:%s entry:%s", connection->getInputChannelName().c_str()
+          , eventEntry->getDescription().c_str());
     // This is a new event.
     // Enqueue a new dispatch entry onto the outbound queue for this connection.
     std::unique_ptr<DispatchEntry> dispatchEntry =
@@ -3513,9 +3515,10 @@ void InputDispatcher::enqueueDispatchEntryLocked(const std::shared_ptr<Connectio
             if ((dispatchEntry->resolvedFlags & AMOTION_EVENT_FLAG_NO_FOCUS_CHANGE) &&
                 (resolvedMotion->policyFlags & POLICY_FLAG_TRUSTED)) {
                 // Skip reporting pointer down outside focus to the policy.
+                ALOGE("Skip reporting pointer down outside focus to the policy");
                 break;
             }
-
+            ALOGE("should dispatchPointerDownOutsideFocus");
             dispatchPointerDownOutsideFocus(resolvedMotion->source, resolvedMotion->action,
                                             inputTarget.connection->getToken());
 
@@ -3635,6 +3638,7 @@ void InputDispatcher::dispatchPointerDownOutsideFocus(uint32_t source, int32_t a
                                                       const sp<IBinder>& token) {
     int32_t maskedAction = action & AMOTION_EVENT_ACTION_MASK;
     uint32_t maskedSource = source & AINPUT_SOURCE_CLASS_MASK;
+    ALOGE("dispatchPointerDownOutsideFocus source:%x action:%d", source, action);
     if (maskedSource != AINPUT_SOURCE_CLASS_POINTER || maskedAction != AMOTION_EVENT_ACTION_DOWN) {
         return;
     }
@@ -3642,6 +3646,7 @@ void InputDispatcher::dispatchPointerDownOutsideFocus(uint32_t source, int32_t a
     sp<IBinder> focusedToken = mFocusResolver.getFocusedWindowToken(mFocusedDisplayId);
     if (focusedToken == token) {
         // ignore since token is focused
+        ALOGE("ignore since token is focused");
         return;
     }
 
@@ -3649,6 +3654,7 @@ void InputDispatcher::dispatchPointerDownOutsideFocus(uint32_t source, int32_t a
         scoped_unlock unlock(mLock);
         mPolicy.onPointerDownOutsideFocus(token);
     };
+    ALOGE("postCommandLocked");
     postCommandLocked(std::move(command));
 }
 
