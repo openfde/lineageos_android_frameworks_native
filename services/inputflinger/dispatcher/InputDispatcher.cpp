@@ -1382,12 +1382,15 @@ sp<WindowInfoHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t displayI
               info->displayId, info->frame.left, info->frame.top,
               info->frame.right, info->frame.bottom);
         ALOGD("      layoutParamsFlags=0x%08x, inputConfig=0x%08x",
-              info->layoutParamsFlags.value(), info->inputConfig.value());
+              static_cast<uint32_t>(info->layoutParamsFlags),
+              static_cast<uint32_t>(info->inputConfig));
         ALOGD("      visible=%d, touchable=%d, focusable=%d, spy=%d",
               !info->inputConfig.test(WindowInfo::InputConfig::NOT_VISIBLE),
               !info->inputConfig.test(WindowInfo::InputConfig::NOT_TOUCHABLE),
               !info->inputConfig.test(WindowInfo::InputConfig::NOT_FOCUSABLE),
               info->inputConfig.test(WindowInfo::InputConfig::SPY));
+        ALOGD("      owner: uid=%d, pid=%d",
+              info->ownerUid.value, info->ownerPid.value);
 
         // 跳过拖拽窗口
         if (ignoreDragWindow && mDragState && haveSameToken(windowHandle, mDragState->dragWindow)) {
@@ -1406,13 +1409,7 @@ sp<WindowInfoHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t displayI
             ALOGD("      -> FOUND TARGET WINDOW: %s", info->name.c_str());
             return windowHandle;
         }
-
-        if (info->inputConfig.test(WindowInfo::InputConfig::SPY) && acceptsTouch) {
-            ALOGD("      -> Found spy window (skipping for normal touch): %s", info->name.c_str());
-        }
     }
-
-    ALOGD("No suitable window found at (%.1f, %.1f) on display %d", x, y, displayId);
     return nullptr;
 }
 
