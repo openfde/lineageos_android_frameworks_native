@@ -1389,8 +1389,8 @@ sp<WindowInfoHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t displayI
               !info->inputConfig.test(WindowInfo::InputConfig::NOT_TOUCHABLE),
               !info->inputConfig.test(WindowInfo::InputConfig::NOT_FOCUSABLE),
               info->inputConfig.test(WindowInfo::InputConfig::SPY));
-        ALOGD("      owner: uid=%d, pid=%d",
-              info->ownerUid.value, info->ownerPid.value);
+//        ALOGD("      owner: uid=%d, pid=%d",
+//              info->ownerUid.value, info->ownerPid.value);
 
         // 跳过拖拽窗口
         if (ignoreDragWindow && mDragState && haveSameToken(windowHandle, mDragState->dragWindow)) {
