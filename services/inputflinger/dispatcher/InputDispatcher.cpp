@@ -803,46 +803,101 @@ sp<InputWindowHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t display
                                                                  int32_t y, TouchState* touchState,
                                                                  bool addOutsideTargets,
                                                                  bool addPortalWindows) {
+    ALOGD("=== findTouchedWindowAtLocked START ===");
+    ALOGD("Searching at (%d, %d) on display %d", x, y, displayId);
+    ALOGD("Options: addOutsideTargets=%d, addPortalWindows=%d", addOutsideTargets, addPortalWindows);
+
     if ((addPortalWindows || addOutsideTargets) && touchState == nullptr) {
-        LOG_ALWAYS_FATAL(
-                "Must provide a valid touch state if adding portal windows or outside targets");
+        LOG_ALWAYS_FATAL("Must provide valid touch state for portal/outside targets");
     }
-    // Traverse windows from front to back to find touched window.
+
     const std::vector<sp<InputWindowHandle>> windowHandles = getWindowHandlesLocked(displayId);
-    for (const sp<InputWindowHandle>& windowHandle : windowHandles) {
-        const InputWindowInfo* windowInfo = windowHandle->getInfo();
-        if (windowInfo->displayId == displayId) {
-            int32_t flags = windowInfo->layoutParamsFlags;
+    ALOGD("Window count: %zu", windowHandles.size());
 
-            if (windowInfo->visible) {
-                if (!(flags & InputWindowInfo::FLAG_NOT_TOUCHABLE)) {
-                    bool isTouchModal = (flags &
-                                         (InputWindowInfo::FLAG_NOT_FOCUSABLE |
-                                          InputWindowInfo::FLAG_NOT_TOUCH_MODAL)) == 0;
-                    if (isTouchModal || windowInfo->touchableRegionContainsPoint(x, y)) {
-                        int32_t portalToDisplayId = windowInfo->portalToDisplayId;
-                        if (portalToDisplayId != ADISPLAY_ID_NONE &&
-                            portalToDisplayId != displayId) {
-                            if (addPortalWindows) {
-                                // For the monitoring channels of the display.
-                                touchState->addPortalWindow(windowHandle);
-                            }
-                            return findTouchedWindowAtLocked(portalToDisplayId, x, y, touchState,
-                                                             addOutsideTargets, addPortalWindows);
-                        }
-                        // Found window.
-                        return windowHandle;
-                    }
+    for (size_t i = 0; i < windowHandles.size(); ++i) {
+        const sp<InputWindowHandle>& windowHandle = windowHandles[i];
+
+        if (windowHandle == nullptr) {
+            ALOGW("[%zu] NULL handle", i);
+            continue;
+        }
+
+        const InputWindowInfo* info = windowHandle->getInfo();
+        if (info == nullptr) {
+            ALOGW("[%zu] NULL info", i);
+            continue;
+        }
+
+        ALOGD("[%zu] '%s' (id=%d, token=%p)", i, info->name.c_str(), info->id, info->token.get());
+        ALOGD("     display: %d (expected %d), visible: %d", info->displayId, displayId, info->visible);
+        ALOGD("     flags: 0x%08x", info->layoutParamsFlags);
+        ALOGD("     frame: [%d,%d,%d,%d]", info->frameLeft, info->frameTop,
+              info->frameRight, info->frameBottom);
+        ALOGD("     portalTo: %d", info->portalToDisplayId);
+
+        // Skip wrong display
+        if (info->displayId != displayId) {
+            ALOGD("     -> SKIP: wrong display");
+            continue;
+        }
+
+        if (!info->visible) {
+            ALOGD("     -> SKIP: not visible");
+            continue;
+        }
+
+        // Check touchability
+        if (info->layoutParamsFlags & InputWindowInfo::FLAG_NOT_TOUCHABLE) {
+            ALOGD("     -> SKIP: FLAG_NOT_TOUCHABLE");
+            continue;
+        }
+
+        // Check touch modality
+        const bool isTouchModal = (info->layoutParamsFlags &
+                                   (InputWindowInfo::FLAG_NOT_FOCUSABLE |
+                                    InputWindowInfo::FLAG_NOT_TOUCH_MODAL)) == 0;
+
+        // Check touch region
+        const bool inTouchRegion = info->touchableRegionContainsPoint(x, y);
+
+        ALOGD("     -> touchModal: %d, inRegion: %d", isTouchModal, inTouchRegion);
+
+        if (isTouchModal || inTouchRegion) {
+            // Handle portal windows
+            if (info->portalToDisplayId != ADISPLAY_ID_NONE &&
+                info->portalToDisplayId != displayId) {
+                ALOGD("     -> PORTAL DETECTED: redirecting to display %d", info->portalToDisplayId);
+
+                if (addPortalWindows && touchState) {
+                    touchState->addPortalWindow(windowHandle);
+                    ALOGD("     -> Portal window added to touch state");
                 }
 
-                if (addOutsideTargets && (flags & InputWindowInfo::FLAG_WATCH_OUTSIDE_TOUCH)) {
-                    touchState->addOrUpdateWindow(windowHandle,
-                                                  InputTarget::FLAG_DISPATCH_AS_OUTSIDE,
-                                                  BitSet32(0));
-                }
+                sp<InputWindowHandle> portalResult =
+                        findTouchedWindowAtLocked(info->portalToDisplayId, x, y, touchState,
+                                                  addOutsideTargets, addPortalWindows);
+                ALOGD("     -> Portal search result: %s",
+                      portalResult ? portalResult->getInfo()->name.c_str() : "NULL");
+                return portalResult;
+            }
+
+            ALOGD("     -> SELECTED: %s", info->name.c_str());
+            return windowHandle;
+        }
+
+        // Handle outside targets
+        if (addOutsideTargets &&
+            (info->layoutParamsFlags & InputWindowInfo::FLAG_WATCH_OUTSIDE_TOUCH)) {
+            if (touchState) {
+                touchState->addOrUpdateWindow(windowHandle,
+                                              InputTarget::FLAG_DISPATCH_AS_OUTSIDE,
+                                              BitSet32(0));
+                ALOGD("     -> ADDED OUTSIDE TARGET");
             }
         }
     }
+
+    ALOGD("=== NO WINDOW FOUND ===");
     return nullptr;
 }
 
