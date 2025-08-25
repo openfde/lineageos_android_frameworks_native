@@ -3373,6 +3373,21 @@ void InputDispatcher::enqueueDispatchEntryLocked(const std::shared_ptr<Connectio
     }
     ALOGE("enqueueDispatchEntryLocked connection:%s entry:%s", connection->getInputChannelName().c_str()
           , eventEntry->getDescription().c_str());
+    if (inputTarget.windowHandle && inputTarget.windowHandle->getInfo()) {
+        const auto& info = *inputTarget.windowHandle->getInfo();
+        ALOGE("Window: name='%s', uid=%d, pid=%d, package='%s', token=%p",
+              info.name.c_str(),
+              info.ownerUid,
+              info.ownerPid,
+              info.packageName.c_str(),
+              info.token.get());
+    } else if (inputTarget.connection) {
+        ALOGE("Connection: %s (no window handle)",
+              inputTarget.connection->getInputChannelName().c_str());
+    } else {
+        ALOGE("InputTarget: no window or connection info (likely global monitor)");
+    }
+
     // This is a new event.
     // Enqueue a new dispatch entry onto the outbound queue for this connection.
     std::unique_ptr<DispatchEntry> dispatchEntry =
