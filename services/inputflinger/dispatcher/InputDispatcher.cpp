@@ -1381,9 +1381,9 @@ sp<WindowInfoHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t displayI
         ALOGD("      displayId=%d, frame=[%d,%d,%d,%d]",
               info->displayId, info->frame.left, info->frame.top,
               info->frame.right, info->frame.bottom);
-        ALOGD("      layoutParamsFlags=0x%08x, inputConfig=0x%08x",
-              static_cast<uint32_t>(info->layoutParamsFlags),
-              static_cast<uint32_t>(info->inputConfig));
+//        ALOGD("      layoutParamsFlags=0x%08x, inputConfig=0x%08x",
+//              static_cast<uint32_t>(info->layoutParamsFlags),
+//              static_cast<uint32_t>(info->inputConfig));
         ALOGD("      visible=%d, touchable=%d, focusable=%d, spy=%d",
               !info->inputConfig.test(WindowInfo::InputConfig::NOT_VISIBLE),
               !info->inputConfig.test(WindowInfo::InputConfig::NOT_TOUCHABLE),
