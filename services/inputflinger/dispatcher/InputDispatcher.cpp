@@ -1257,6 +1257,17 @@ bool InputDispatcher::dispatchMotionLocked(nsecs_t currentTime, MotionEntry* ent
         injectionResult =
                 findFocusedWindowTargetsLocked(currentTime, *entry, inputTargets, nextWakeupTime);
     }
+    for (size_t i = 0; i < inputTargets.size(); ++i) {
+        InputTarget inputTarget = targets[i];
+        if (inputTarget.windowHandle && inputTarget.windowHandle->getInfo()) {
+            ALOGE("findinputtarget pointerinfo:%s",inputTarget.getPointerInfoString().c_str());
+            const auto& info = *inputTarget.windowHandle->getInfo();
+             if (inputTarget.inputChannel) {
+                 ALOGE("findinputtarget inputchannel: %s", inputTarget.inputChannel->getName().c_str());
+             }
+        }
+    }
+
     if (injectionResult == INPUT_EVENT_INJECTION_PENDING) {
         return false;
     }
