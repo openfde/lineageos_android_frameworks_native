@@ -811,6 +811,9 @@ sp<InputWindowHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t display
         LOG_ALWAYS_FATAL("Must provide valid touch state for portal/outside targets");
     }
 
+    std::string dump;
+    dumpDispatchStateLocked(dump);
+    ALOGD("findTouchedWindowAtLocked %s", dump.c_str());
     const std::vector<sp<InputWindowHandle>> windowHandles = getWindowHandlesLocked(displayId);
     ALOGD("Window count: %zu", windowHandles.size());
 
