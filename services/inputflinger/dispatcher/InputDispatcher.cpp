@@ -5308,6 +5308,9 @@ void InputDispatcher::updateWindowHandlesForDisplayLocked(
 
     // Insert or replace
     mWindowHandlesByDisplay[displayId] = newHandles;
+    std::string dump;
+    dumpDispatchStateLocked(dump);
+    ALOGE("updateWindowHandlesForDisplayLocked %s", dump.c_str());
 }
 
 /**
