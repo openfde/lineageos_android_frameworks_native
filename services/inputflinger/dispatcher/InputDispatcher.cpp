@@ -17,31 +17,31 @@
 #define LOG_TAG "InputDispatcher"
 #define ATRACE_TAG ATRACE_TAG_INPUT
 
-#define LOG_NDEBUG 1
+#define LOG_NDEBUG 0
 
 // Log detailed debug messages about each inbound event notification to the dispatcher.
-#define DEBUG_INBOUND_EVENT_DETAILS 0
+#define DEBUG_INBOUND_EVENT_DETAILS 1
 
 // Log detailed debug messages about each outbound event processed by the dispatcher.
-#define DEBUG_OUTBOUND_EVENT_DETAILS 0
+#define DEBUG_OUTBOUND_EVENT_DETAILS 1
 
 // Log debug messages about the dispatch cycle.
-#define DEBUG_DISPATCH_CYCLE 0
+#define DEBUG_DISPATCH_CYCLE 1
 
 // Log debug messages about registrations.
-#define DEBUG_REGISTRATION 0
+#define DEBUG_REGISTRATION 1
 
 // Log debug messages about input event injection.
-#define DEBUG_INJECTION 0
+#define DEBUG_INJECTION 1
 
 // Log debug messages about input focus tracking.
-static constexpr bool DEBUG_FOCUS = false;
+static constexpr bool DEBUG_FOCUS = true;
 
 // Log debug messages about the app switch latency optimization.
-#define DEBUG_APP_SWITCH 0
+#define DEBUG_APP_SWITCH 1
 
 // Log debug messages about hover events.
-#define DEBUG_HOVER 0
+#define DEBUG_HOVER 1
 
 #include "InputDispatcher.h"
 
