@@ -2769,7 +2769,24 @@ std::vector<InputTarget> InputDispatcher::findTouchedWindowTargetsLocked(
     if (tempTouchState.windows.empty()) {
         mTouchStatesByDisplay.erase(displayId);
     }
+    for (size_t i = 0; i < targets.size(); ++i) {
+        InputTarget inputTarget = targets[i];
+        if (inputTarget.windowHandle && inputTarget.windowHandle->getInfo()) {
+            const auto& info = *inputTarget.windowHandle->getInfo();
+            ALOGE("findtouch Window: name='%s', uid=%d, pid=%d, package='%s', token=%p",
+                  info.name.c_str(),
+                  info.ownerUid,
+                  info.ownerPid,
+                  info.packageName.c_str(),
+                  info.token.get());
+        } else if (inputTarget.connection) {
+            ALOGE("findtouch Connection: %s (no window handle)",
+                  inputTarget.connection->getInputChannelName().c_str());
+        } else {
+            ALOGE("findtouch InputTarget: no window or connection info (likely global monitor)");
+        }
 
+    }
     return targets;
 }
 
