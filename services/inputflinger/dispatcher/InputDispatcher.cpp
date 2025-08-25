@@ -1355,19 +1355,56 @@ void InputDispatcher::addRecentEventLocked(std::shared_ptr<const EventEntry> ent
 sp<WindowInfoHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t displayId, float x, float y,
                                                                 bool isStylus,
                                                                 bool ignoreDragWindow) const {
+    ALOGD("findTouchedWindowAtLocked: displayId=%d, x=%.1f, y=%.1f, isStylus=%d, ignoreDragWindow=%d",
+          displayId, x, y, isStylus, ignoreDragWindow);
+
     // Traverse windows from front to back to find touched window.
     const auto& windowHandles = getWindowHandlesLocked(displayId);
-    for (const sp<WindowInfoHandle>& windowHandle : windowHandles) {
-        if (ignoreDragWindow && haveSameToken(windowHandle, mDragState->dragWindow)) {
+    ALOGD("Total windows on display %d: %zu", displayId, windowHandles.size());
+
+    for (size_t i = 0; i < windowHandles.size(); ++i) {
+        const sp<WindowInfoHandle>& windowHandle = windowHandles[i];
+
+        if (windowHandle == nullptr) {
+            ALOGW("Window handle at index %zu is null, skipping", i);
             continue;
         }
 
-        const WindowInfo& info = *windowHandle->getInfo();
-        if (!info.isSpy() &&
-            windowAcceptsTouchAt(info, displayId, x, y, isStylus, getTransformLocked(displayId))) {
+        const WindowInfo* info = windowHandle->getInfo();
+        if (info == nullptr) {
+            ALOGW("WindowInfo is null for handle at index %zu, skipping", i);
+            continue;
+        }
+
+        ALOGD("Checking window[%zu]: name='%s', token=%p, flags=0x%x, frame=[%d,%d,%d,%d], "
+              "visible=%d, touchable=%d, spy=%d",
+              i, info->name.c_str(), info->token.get(), info->flags.value(),
+              info->frameLeft, info->frameTop, info->frameRight, info->frameBottom,
+              info->visible, info->touchable, info->isSpy());
+
+        // Skip drag window if requested
+        if (ignoreDragWindow && mDragState && haveSameToken(windowHandle, mDragState->dragWindow)) {
+            ALOGD("  -> Skipping drag window: %s", info->name.c_str());
+            continue;
+        }
+
+        // Check if window accepts touch
+        const bool acceptsTouch = windowAcceptsTouchAt(*info, displayId, x, y, isStylus,
+                                                       getTransformLocked(displayId));
+
+        ALOGD("  -> acceptsTouch=%d, isSpy=%d", acceptsTouch, info->isSpy());
+
+        if (!info->isSpy() && acceptsTouch) {
+            ALOGD("  -> FOUND TARGET WINDOW: %s (token=%p)", info->name.c_str(), info->token.get());
             return windowHandle;
         }
+
+        if (info->isSpy() && acceptsTouch) {
+            ALOGD("  -> Found spy window (skipping for normal touch): %s", info->name.c_str());
+        }
     }
+
+    ALOGD("No suitable window found at (%.1f, %.1f) on display %d", x, y, displayId);
     return nullptr;
 }
 
