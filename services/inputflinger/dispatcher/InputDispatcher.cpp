@@ -1358,7 +1358,6 @@ sp<WindowInfoHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t displayI
     ALOGD("findTouchedWindowAtLocked: displayId=%d, x=%.1f, y=%.1f, isStylus=%d, ignoreDragWindow=%d",
           displayId, x, y, isStylus, ignoreDragWindow);
 
-    // Traverse windows from front to back to find touched window.
     const auto& windowHandles = getWindowHandlesLocked(displayId);
     ALOGD("Total windows on display %d: %zu", displayId, windowHandles.size());
 
@@ -1376,31 +1375,40 @@ sp<WindowInfoHandle> InputDispatcher::findTouchedWindowAtLocked(int32_t displayI
             continue;
         }
 
-        ALOGD("Checking window[%zu]: name='%s', token=%p, flags=0x%x, frame=[%d,%d,%d,%d], "
-              "visible=%d, touchable=%d, spy=%d",
-              i, info->name.c_str(), info->token.get(), info->flags.value(),
-              info->frameLeft, info->frameTop, info->frameRight, info->frameBottom,
-              info->visible, info->touchable, info->isSpy());
+        // 完整的窗口信息日志
+        ALOGD("  [%zu] '%s' (id=%d, token=%p)", i,
+              info->name.c_str(), info->id, info->token.get());
+        ALOGD("      displayId=%d, frame=[%d,%d,%d,%d]",
+              info->displayId, info->frame.left, info->frame.top,
+              info->frame.right, info->frame.bottom);
+        ALOGD("      layoutParamsFlags=0x%08x, inputConfig=0x%08x",
+              info->layoutParamsFlags.value(), info->inputConfig.value());
+        ALOGD("      visible=%d, touchable=%d, focusable=%d, spy=%d",
+              !info->inputConfig.test(WindowInfo::InputConfig::NOT_VISIBLE),
+              !info->inputConfig.test(WindowInfo::InputConfig::NOT_TOUCHABLE),
+              !info->inputConfig.test(WindowInfo::InputConfig::NOT_FOCUSABLE),
+              info->inputConfig.test(WindowInfo::InputConfig::SPY));
 
-        // Skip drag window if requested
+        // 跳过拖拽窗口
         if (ignoreDragWindow && mDragState && haveSameToken(windowHandle, mDragState->dragWindow)) {
-            ALOGD("  -> Skipping drag window: %s", info->name.c_str());
+            ALOGD("      -> SKIP: drag window");
             continue;
         }
 
-        // Check if window accepts touch
+        // 检查窗口是否接受触摸
         const bool acceptsTouch = windowAcceptsTouchAt(*info, displayId, x, y, isStylus,
                                                        getTransformLocked(displayId));
 
-        ALOGD("  -> acceptsTouch=%d, isSpy=%d", acceptsTouch, info->isSpy());
+        ALOGD("      -> acceptsTouch=%d, isSpy=%d", acceptsTouch,
+              info->inputConfig.test(WindowInfo::InputConfig::SPY));
 
-        if (!info->isSpy() && acceptsTouch) {
-            ALOGD("  -> FOUND TARGET WINDOW: %s (token=%p)", info->name.c_str(), info->token.get());
+        if (!info->inputConfig.test(WindowInfo::InputConfig::SPY) && acceptsTouch) {
+            ALOGD("      -> FOUND TARGET WINDOW: %s", info->name.c_str());
             return windowHandle;
         }
 
-        if (info->isSpy() && acceptsTouch) {
-            ALOGD("  -> Found spy window (skipping for normal touch): %s", info->name.c_str());
+        if (info->inputConfig.test(WindowInfo::InputConfig::SPY) && acceptsTouch) {
+            ALOGD("      -> Found spy window (skipping for normal touch): %s", info->name.c_str());
         }
     }
 
