@@ -52,7 +52,9 @@
  *   - DO NOT CHANGE THE LAYOUT OR SIZE OF STRUCTURES
  */
 
+ #ifdef __ANDROID__
 #include <android/api-level.h>
+#endif
 #include <stdint.h>
 #include <unistd.h>
 
