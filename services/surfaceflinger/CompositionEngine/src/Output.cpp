@@ -480,10 +480,11 @@ void Output::ensureOutputLayerIfVisible(sp<compositionengine::LayerFE>& layerFE,
 
     // subtract the opaque region covered by the layers above us
     visibleRegion.subtractSelf(coverage.aboveOpaqueLayers);
-
-    if (visibleRegion.isEmpty()) {
-        return;
-    }
+    // region @openfde to prevent the x11 window from being closed
+    //if (visibleRegion.isEmpty()) {
+    //    return;
+    //}
+    // endregion
 
     // Get coverage information for the layer as previously displayed,
     // also taking over ownership from mOutputLayersorderedByZ.
@@ -540,9 +541,11 @@ void Output::ensureOutputLayerIfVisible(sp<compositionengine::LayerFE>& layerFE,
     const auto& outputState = getState();
     Region drawRegion(outputState.transform.transform(visibleNonTransparentRegion));
     drawRegion.andSelf(outputState.bounds);
-    if (drawRegion.isEmpty()) {
-        return;
-    }
+    // region @openfde to prevent the x11 window from being closed
+    //if (drawRegion.isEmpty()) {
+    //    return;
+    //}
+    // endregion
 
     Region visibleNonShadowRegion = visibleRegion.subtract(shadowRegion);
 
