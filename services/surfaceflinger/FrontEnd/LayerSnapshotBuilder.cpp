@@ -26,7 +26,6 @@
 #include <gui/TraceUtils.h>
 #include <ui/DisplayMap.h>
 #include <ui/FloatRect.h>
-#include <cutils/properties.h>
 
 #include "DisplayHardware/HWC2.h"
 #include "DisplayHardware/Hal.h"
@@ -983,17 +982,7 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
     snapshot.geomLayerBounds =
             (requested.externalTexture) ? snapshot.bufferSize.toFloatRect() : parentBounds;
     if (!requested.crop.isEmpty()) {
-        // [openfde add] fix screen tearing when window scaling
-        char prop[PROPERTY_VALUE_MAX];
-        property_get("com.fde.scaling_window", prop, "false");
-        if (strcmp(prop, "false") == 0) {
-            if(!(snapshot.geomLayerBounds.left == 0 && snapshot.geomLayerBounds.right > requested.crop.toFloatRect().right)) {
-                snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(requested.crop.toFloatRect());
-            }
-        } else {
-            snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(requested.crop.toFloatRect());
-        }
-        // [openfde end]
+        snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(requested.crop.toFloatRect());
     }
     snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(parentBounds);
     snapshot.transformedBounds = snapshot.geomLayerTransform.transform(snapshot.geomLayerBounds);
