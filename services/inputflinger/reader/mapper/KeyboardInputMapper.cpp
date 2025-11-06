@@ -446,7 +446,8 @@ void KeyboardInputMapper::updateLedState(bool reset) {
     mMetaState &= ~(AMETA_CAPS_LOCK_ON | AMETA_NUM_LOCK_ON | AMETA_SCROLL_LOCK_ON);
     mMetaState |= getContext()->getLedMetaState();
 
-    constexpr int32_t META_NUM = 3;
+    //region Openfde default support caps lock and num lock
+    /*constexpr int32_t META_NUM = 3;
     const std::vector<int32_t> keyCodes{AKEYCODE_CAPS_LOCK, AKEYCODE_NUM_LOCK,
                                         AKEYCODE_SCROLL_LOCK};
     const std::array<int32_t, META_NUM> metaCodes = {AMETA_CAPS_LOCK_ON, AMETA_NUM_LOCK_ON,
@@ -461,7 +462,8 @@ void KeyboardInputMapper::updateLedState(bool reset) {
                 mMetaState &= ~metaCodes[i];
             }
         }
-    }
+    }*/
+    //end region
 
     updateLedStateForModifier(mCapsLockLedState, ALED_CAPS_LOCK, AMETA_CAPS_LOCK_ON, reset);
     updateLedStateForModifier(mNumLockLedState, ALED_NUM_LOCK, AMETA_NUM_LOCK_ON, reset);
