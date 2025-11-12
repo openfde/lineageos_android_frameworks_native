@@ -35,6 +35,15 @@
 #include "TimeStats/TimeStats.h"
 #include "Tracing/TransactionTracing.h"
 
+// [openfde add] fix caption and window are not synchronized when window is scaling
+#include <cutils/properties.h>
+
+float mRealActivityWidth = 0.0;
+std::string mTopPackageName;
+std::string mCaptionName;
+bool mEnableCaptionSync = true;
+// [openfde end]
+
 namespace android::surfaceflinger::frontend {
 
 using namespace ftl::flag_operators;
@@ -439,6 +448,23 @@ void LayerSnapshotBuilder::updateSnapshots(const Args& args) {
         }
     }
 
+    // [openfde add] fix caption and window are not synchronized when window is scaling
+    char top_package_name[PROPERTY_VALUE_MAX];
+    property_get("com.fde.top_package_name", top_package_name, "");
+    char caption_name[PROPERTY_VALUE_MAX];
+    property_get("com.fde.caption_name", caption_name, "");
+    char enable_caption_sync[PROPERTY_VALUE_MAX];
+    property_get("persist.debug.caption_sync", enable_caption_sync, "true");
+
+    mCaptionName = caption_name;
+    mTopPackageName = top_package_name;
+    if (strcasecmp(enable_caption_sync, "true") != 0) {
+        mEnableCaptionSync = false;
+    } else {
+        mEnableCaptionSync = true;
+    }
+    // [openfde end]
+
     LayerHierarchy::TraversalPath root = LayerHierarchy::TraversalPath::ROOT;
     if (args.root.getLayer()) {
         // The hierarchy can have a root layer when used for screenshots otherwise, it will have
@@ -717,7 +743,6 @@ void LayerSnapshotBuilder::updateSnapshot(LayerSnapshot& snapshot, const Args& a
     snapshot.isHiddenByPolicyFromParent = parentSnapshot.isHiddenByPolicyFromParent ||
             parentSnapshot.invalidTransform || requested.isHiddenByPolicy() ||
             (args.excludeLayerIds.find(path.id) != args.excludeLayerIds.end());
-
     const bool forceUpdate = args.forceUpdate == ForceUpdateFlags::ALL ||
             snapshot.clientChanges & layer_state_t::eReparent ||
             snapshot.changes.any(RequestedLayerState::Changes::Visibility |
@@ -865,6 +890,16 @@ void LayerSnapshotBuilder::updateSnapshot(LayerSnapshot& snapshot, const Args& a
     if (forceUpdate || snapshot.changes.any(RequestedLayerState::Changes::Geometry)) {
         uint32_t primaryDisplayRotationFlags = getPrimaryDisplayRotationFlags(args.displays);
         updateLayerBounds(snapshot, requested, parentSnapshot, primaryDisplayRotationFlags);
+    } else {
+        // [openfde add] fix caption and window are not synchronized when window is scaling
+        if (!mCaptionName.empty() && mEnableCaptionSync) {
+            std::string  snapshot_name(snapshot.name);
+            if (snapshot_name.find(mCaptionName) != std::string::npos) {
+                uint32_t primaryDisplayRotationFlags = getPrimaryDisplayRotationFlags(args.displays);
+                updateLayerBounds(snapshot, requested, parentSnapshot, primaryDisplayRotationFlags);
+            }
+        }
+        // [openfde end]
     }
 
     if (forceUpdate || snapshot.clientChanges & layer_state_t::eCornerRadiusChanged ||
@@ -985,6 +1020,49 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
         snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(requested.crop.toFloatRect());
     }
     snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(parentBounds);
+
+    // [openfde add] fix caption and window are not synchronized when window is scaling
+    if (mEnableCaptionSync) {
+        std::string snapshot_name(snapshot.name);
+        FloatRect mActivityCrop;
+        bool hasWallpaperLayer = false;
+        if (!mCaptionName.empty() && snapshot_name.find(mCaptionName) != std::string::npos) {
+            mRealActivityWidth = 0.0;
+            forEachVisibleSnapshot([&](const frontend::LayerSnapshot& snapshot) {
+                if (snapshot.hasSomethingToDraw()) {
+                    if (snapshot.name.find(mTopPackageName) != std::string::npos) {
+                        mRealActivityWidth += snapshot.geomLayerBounds.right;
+                    }
+                    if (snapshot.name.find("com.android.wallpaper") != std::string::npos) {
+                        hasWallpaperLayer = true;
+                    }
+                }
+            });
+
+            if (hasWallpaperLayer) {
+                mRealActivityWidth = 0;
+            }
+
+            if (mRealActivityWidth > 0) {
+                mActivityCrop = snapshot.geomLayerBounds;
+                mActivityCrop.right = mRealActivityWidth - 1;
+                snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(mActivityCrop);
+                // mRealActivityWidth cant be greater than the parent layout width
+                if (snapshot.geomLayerBounds.right != mActivityCrop.right) {
+                    mRealActivityWidth = 0;
+                }
+            }
+
+            if (!mTopPackageName.empty()) {
+                // notify CaptionWindowDecoration to set an appropriate Buffer size
+                property_set("com.fde.package_with_caption", mTopPackageName.c_str());
+                std::string data = std::to_string(static_cast<int>(mRealActivityWidth));
+                property_set("com.fde.caption_width", data.c_str());
+            }
+        }
+    }
+    // [openfde end]
+
     snapshot.transformedBounds = snapshot.geomLayerTransform.transform(snapshot.geomLayerBounds);
     const Rect geomLayerBoundsWithoutTransparentRegion =
             RequestedLayerState::reduce(Rect(snapshot.geomLayerBounds),
