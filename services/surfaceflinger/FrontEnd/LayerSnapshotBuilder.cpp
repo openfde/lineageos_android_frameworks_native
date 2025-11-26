@@ -41,6 +41,7 @@
 float mRealActivityWidth = 0.0;
 std::string mTopPackageName;
 std::string mCaptionName;
+std::string mTaskName;
 bool mEnableCaptionSync = true;
 // [openfde end]
 
@@ -453,10 +454,13 @@ void LayerSnapshotBuilder::updateSnapshots(const Args& args) {
     property_get("com.fde.top_package_name", top_package_name, "");
     char caption_name[PROPERTY_VALUE_MAX];
     property_get("com.fde.caption_name", caption_name, "");
+    char task_name[PROPERTY_VALUE_MAX];
+    property_get("com.fde.task_name", task_name, "");
     char enable_caption_sync[PROPERTY_VALUE_MAX];
     property_get("persist.debug.caption_sync", enable_caption_sync, "true");
 
     mCaptionName = caption_name;
+    mTaskName = task_name;
     mTopPackageName = top_package_name;
     if (strcasecmp(enable_caption_sync, "true") != 0) {
         mEnableCaptionSync = false;
@@ -737,6 +741,7 @@ void LayerSnapshotBuilder::updateSnapshot(LayerSnapshot& snapshot, const Args& a
              RequestedLayerState::Changes::AffectsChildren | RequestedLayerState::Changes::Input |
              RequestedLayerState::Changes::FrameRate | RequestedLayerState::Changes::GameMode);
     snapshot.changes |= parentChanges;
+    snapshot.mParentSnapshot = &parentSnapshot;
     if (args.displayChanges) snapshot.changes |= RequestedLayerState::Changes::Geometry;
     snapshot.reachablilty = LayerSnapshot::Reachablilty::Reachable;
     snapshot.clientChanges |= (parentSnapshot.clientChanges & layer_state_t::AFFECTS_CHILDREN);
@@ -1024,38 +1029,67 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
     // [openfde add] fix caption and window are not synchronized when window is scaling
     if (mEnableCaptionSync) {
         std::string snapshot_name(snapshot.name);
-        FloatRect mActivityCrop;
-        bool hasWallpaperLayer = false;
-        if (!mCaptionName.empty() && snapshot_name.find(mCaptionName) != std::string::npos) {
+        std::string app_class_name = "";
+        float taskLayerWidth = 0.0;
+        bool isWallpaperLayer = false;
+        bool isMutliLayerWindows = false;
+        bool isPackageLayer = (!mTopPackageName.empty() && snapshot_name.starts_with(mTopPackageName));
+        bool isCaptionLayer = (!mCaptionName.empty() && snapshot_name.find(mCaptionName) != std::string::npos);
+        if (isPackageLayer || isCaptionLayer) {
             mRealActivityWidth = 0.0;
-            forEachVisibleSnapshot([&](const frontend::LayerSnapshot& snapshot) {
-                if (snapshot.hasSomethingToDraw()) {
-                    if (snapshot.name.find(mTopPackageName) != std::string::npos) {
-                        mRealActivityWidth += snapshot.geomLayerBounds.right;
+            forEachSnapshot([&](const LayerSnapshot& mSnapshot) {
+                if (mSnapshot.name.starts_with(mTopPackageName)
+                        || mSnapshot.name.starts_with("com.android.wallpaper")) {
+                    bool found = false;
+                    const LayerSnapshot* tmpSnapShot = &mSnapshot;
+                    while (tmpSnapShot->mParentSnapshot != nullptr) {
+                        // find out if the app window is in the same parent layer as the captionbar
+                        if (tmpSnapShot->mParentSnapshot->name.starts_with(mTaskName)) {
+                            taskLayerWidth = tmpSnapShot->mParentSnapshot->geomLayerBounds.right;
+                            found = true;
+                            break;
+                        }
+                        tmpSnapShot = tmpSnapShot->mParentSnapshot;
                     }
-                    if (snapshot.name.find("com.android.wallpaper") != std::string::npos) {
-                        hasWallpaperLayer = true;
+                    if (found) {
+                        app_class_name =  mSnapshot.name.substr(mSnapshot.name.find("/") + 1);
+                        if (app_class_name == "") {
+                            app_class_name = mSnapshot.name;
+                        }
+                        // when app have mutli-windows, set the flag.
+                        if (mRealActivityWidth > 0) {
+                            isMutliLayerWindows = true;
+                        }
+                        mRealActivityWidth += mSnapshot.geomLayerBounds.right;
+                        // when mRealActivityWidth is greater than the parent layer width, reset it.
+                        if (mRealActivityWidth > taskLayerWidth) {
+                            isMutliLayerWindows = false;
+                            mRealActivityWidth = 0;
+                        }
+                        if (mSnapshot.name.find("com.android.wallpaper") != std::string::npos) {
+                            isWallpaperLayer = true;
+                        }
                     }
                 }
             });
 
-            if (hasWallpaperLayer) {
+            if (isWallpaperLayer) {
                 mRealActivityWidth = 0;
             }
 
-            if (mRealActivityWidth > 0) {
-                mActivityCrop = snapshot.geomLayerBounds;
+            if (isCaptionLayer && mRealActivityWidth > 0) {
+                FloatRect mActivityCrop = snapshot.geomLayerBounds;
                 mActivityCrop.right = mRealActivityWidth - 1;
                 snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(mActivityCrop);
-                // mRealActivityWidth cant be greater than the parent layout width
-                if (snapshot.geomLayerBounds.right != mActivityCrop.right) {
-                    mRealActivityWidth = 0;
-                }
             }
 
-            if (!mTopPackageName.empty()) {
+            if (isPackageLayer) {
                 // notify CaptionWindowDecoration to set an appropriate Buffer size
-                property_set("com.fde.package_with_caption", mTopPackageName.c_str());
+                if (app_class_name != "" && !isMutliLayerWindows) {
+                    property_set("com.fde.package_with_caption", app_class_name.c_str());
+                } else {
+                    property_set("com.fde.package_with_caption", mTopPackageName.c_str());
+                }
                 std::string data = std::to_string(static_cast<int>(mRealActivityWidth));
                 property_set("com.fde.caption_width", data.c_str());
             }
@@ -1203,6 +1237,14 @@ void LayerSnapshotBuilder::forEachVisibleSnapshot(const ConstVisitor& visitor) c
     for (int i = 0; i < mNumInterestingSnapshots; i++) {
         LayerSnapshot& snapshot = *mSnapshots[(size_t)i];
         if (!snapshot.isVisible) continue;
+        visitor(snapshot);
+    }
+}
+
+void LayerSnapshotBuilder::forEachSnapshot(const ConstVisitor& visitor) const {
+    for (int i = 0; i < mNumInterestingSnapshots; i++) {
+        LayerSnapshot& snapshot = *mSnapshots[(size_t)i];
+        if (!snapshot.hasSomethingToDraw()) continue;
         visitor(snapshot);
     }
 }

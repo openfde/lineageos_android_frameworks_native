@@ -48,6 +48,7 @@ struct LayerSnapshot : public compositionengine::LayerFECompositionState {
     LayerSnapshot() = default;
     LayerSnapshot(const RequestedLayerState&, const LayerHierarchy::TraversalPath&);
 
+    const LayerSnapshot* mParentSnapshot;
     LayerHierarchy::TraversalPath path;
     size_t globalZ = std::numeric_limits<ssize_t>::max();
     bool invalidTransform = false;
