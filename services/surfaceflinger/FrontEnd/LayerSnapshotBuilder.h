@@ -85,6 +85,7 @@ public:
     typedef std::function<void(std::unique_ptr<LayerSnapshot>& snapshot)> Visitor;
     // Visit each visible snapshot in z-order and move the snapshot if needed
     void forEachVisibleSnapshot(const Visitor& visitor);
+    void forEachSnapshot(const ConstVisitor& visitor) const;
 
     // Visit each snapshot interesting to input reverse z-order
     void forEachInputSnapshot(const ConstVisitor& visitor) const;
