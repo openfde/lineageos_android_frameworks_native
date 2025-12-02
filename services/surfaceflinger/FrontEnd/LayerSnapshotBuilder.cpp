@@ -43,6 +43,7 @@ std::string mTopPackageName;
 std::string mCaptionName;
 std::string mTaskName;
 bool mEnableCaptionSync = true;
+int mDisplayWidth = 0;
 // [openfde end]
 
 namespace android::surfaceflinger::frontend {
@@ -458,6 +459,9 @@ void LayerSnapshotBuilder::updateSnapshots(const Args& args) {
     property_get("com.fde.task_name", task_name, "");
     char enable_caption_sync[PROPERTY_VALUE_MAX];
     property_get("persist.debug.caption_sync", enable_caption_sync, "true");
+    char display_width[PROPERTY_VALUE_MAX];
+    property_get("openfde.display_width", display_width, "0");
+    mDisplayWidth = atoi(display_width);
 
     mCaptionName = caption_name;
     mTaskName = task_name;
@@ -1062,7 +1066,7 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
                         }
                         mRealActivityWidth += mSnapshot.geomLayerBounds.right;
                         // when mRealActivityWidth is greater than the parent layer width, reset it.
-                        if (mRealActivityWidth > taskLayerWidth) {
+                        if (mRealActivityWidth > taskLayerWidth && taskLayerWidth > 0) {
                             isMutliLayerWindows = false;
                             mRealActivityWidth = 0;
                         }
@@ -1073,7 +1077,7 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
                 }
             });
 
-            if (isWallpaperLayer) {
+            if (isWallpaperLayer || (mDisplayWidth > 0 && mRealActivityWidth > mDisplayWidth)) {
                 mRealActivityWidth = 0;
             }
 
@@ -1083,7 +1087,7 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
                 snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(mActivityCrop);
             }
 
-            if (isPackageLayer) {
+            {
                 // notify CaptionWindowDecoration to set an appropriate Buffer size
                 if (app_class_name != "" && !isMutliLayerWindows) {
                     property_set("com.fde.package_with_caption", app_class_name.c_str());
