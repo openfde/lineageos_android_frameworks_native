@@ -1039,7 +1039,8 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
         bool isMutliLayerWindows = false;
         bool isPackageLayer = (!mTopPackageName.empty() && snapshot_name.starts_with(mTopPackageName));
         bool isCaptionLayer = (!mCaptionName.empty() && snapshot_name.find(mCaptionName) != std::string::npos);
-        if (isPackageLayer || isCaptionLayer) {
+        if ((isPackageLayer || isCaptionLayer)
+                && !mTopPackageName.starts_with("com.android.systemui")) {
             mRealActivityWidth = 0.0;
             forEachSnapshot([&](const LayerSnapshot& mSnapshot) {
                 if (mSnapshot.name.starts_with(mTopPackageName)
