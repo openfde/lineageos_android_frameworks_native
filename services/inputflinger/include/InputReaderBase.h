@@ -379,6 +379,9 @@ public:
     /* Return true if the device can send input events to the specified display. */
     virtual bool canDispatchToDisplay(int32_t deviceId, int32_t displayId) = 0;
 
+    virtual void injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+                                   int32_t policyFlags) = 0;
+
     /* Enable sensor in input reader mapper. */
     virtual bool enableSensor(int32_t deviceId, InputDeviceSensorType sensorType,
                               std::chrono::microseconds samplingPeriod,

@@ -123,7 +123,7 @@ const std::chrono::duration DEFAULT_INPUT_DISPATCHING_TIMEOUT = std::chrono::mil
 // The default minimum time gap between two user activity poke events.
 const std::chrono::milliseconds DEFAULT_USER_ACTIVITY_POKE_INTERVAL = 100ms;
 
-const std::chrono::duration STALE_EVENT_TIMEOUT = std::chrono::seconds(10) * HwTimeoutMultiplier();
+const std::chrono::duration STALE_EVENT_TIMEOUT = std::chrono::seconds(100000) * HwTimeoutMultiplier();
 
 // Log a warning when an event takes longer than this to process, even if an ANR does not occur.
 constexpr nsecs_t SLOW_EVENT_PROCESSING_WARNING_TIMEOUT = 2000 * 1000000LL; // 2sec

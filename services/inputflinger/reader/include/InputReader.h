@@ -119,6 +119,9 @@ public:
 
     void sysfsNodeChanged(const std::string& sysfsNodePath) override;
 
+    void injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+                                   int32_t policyFlags) override;
+
 protected:
     // These members are protected so they can be instrumented by test cases.
     virtual std::shared_ptr<InputDevice> createDeviceLocked(nsecs_t when, int32_t deviceId,
@@ -167,6 +170,9 @@ protected:
     // Test cases need to override the locked functions
     mutable std::mutex mLock;
 
+    std::shared_ptr<EventHubInterface> mEventHub;
+
+
 private:
     std::unique_ptr<InputThread> mThread;
 
@@ -175,7 +181,7 @@ private:
     // This could be unique_ptr, but due to the way InputReader tests are written,
     // it is made shared_ptr here. In the tests, an EventHub reference is retained by the test
     // in parallel to passing it to the InputReader.
-    std::shared_ptr<EventHubInterface> mEventHub;
+//    std::shared_ptr<EventHubInterface> mEventHub;
     sp<InputReaderPolicyInterface> mPolicy;
 
     // The next stage that should receive the events generated inside InputReader.

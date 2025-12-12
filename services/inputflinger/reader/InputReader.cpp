@@ -929,6 +929,11 @@ void InputReader::sysfsNodeChanged(const std::string& sysfsNodePath) {
     mEventHub->sysfsNodeChanged(sysfsNodePath);
 }
 
+void InputReader::injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+                                    int32_t policyFlags){
+    mEventHub->injectMotionEvent(event, syncMode, timeoutMillis, policyFlags);
+}
+
 void InputReader::dump(std::string& dump) {
     std::scoped_lock _l(mLock);
 
