@@ -232,7 +232,10 @@ void* GetDataInternal(DispatchableType dispatchable) {
 
     const hwvulkan_dispatch_t* dispatch =
         reinterpret_cast<const hwvulkan_dispatch_t*>(dispatchable);
-
+    if (dispatch == nullptr) {
+        ALOGE("%s %s %d: dispatch == nullptr", __FUNCTION__, __FILE__, __LINE__);
+        return nullptr;
+    }
     return const_cast<void*>(dispatch->vtbl);
 }
 
