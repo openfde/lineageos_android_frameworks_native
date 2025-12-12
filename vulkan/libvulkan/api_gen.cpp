@@ -1004,6 +1004,9 @@ VKAPI_ATTR VkResult QueueWaitIdle(VkQueue queue) {
 }
 
 VKAPI_ATTR VkResult DeviceWaitIdle(VkDevice device) {
+    if (driver::GetDataInternal(device) == nullptr) {
+        return VK_ERROR_UNKNOWN;
+    }
     return GetData(device).dispatch.DeviceWaitIdle(device);
 }
 
