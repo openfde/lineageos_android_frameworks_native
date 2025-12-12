@@ -273,6 +273,9 @@ public:
      */
     virtual std::optional<PropertyMap> getConfiguration(int32_t deviceId) const = 0;
 
+    virtual void injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+                                   int32_t policyFlags) const = 0;
+
     virtual status_t getAbsoluteAxisInfo(int32_t deviceId, int axis,
                                          RawAbsoluteAxisInfo* outAxisInfo) const = 0;
 
@@ -505,6 +508,9 @@ public:
     int32_t getDeviceControllerNumber(int32_t deviceId) const override final;
 
     std::optional<PropertyMap> getConfiguration(int32_t deviceId) const override final;
+
+    void injectMotionEvent(MotionEvent * event, int32_t syncMode, int32_t timeoutMillis,
+                                   int32_t policyFlags) const override;
 
     status_t getAbsoluteAxisInfo(int32_t deviceId, int axis,
                                  RawAbsoluteAxisInfo* outAxisInfo) const override final;
