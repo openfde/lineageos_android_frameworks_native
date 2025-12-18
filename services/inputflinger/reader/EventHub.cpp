@@ -1086,8 +1086,8 @@ void EventHub::injectMotionEvent(MotionEvent * motion, int32_t syncMode, int32_t
                 ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
                 ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 2);
             } else {
-                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 0);
-                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 1);
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 2);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 3);
             }
             ADD_EVENT(EV_ABS, ABS_MT_POSITION_X, (int)motion->getX(0));
             ADD_EVENT(EV_ABS, ABS_MT_POSITION_Y, (int)motion->getY(0));
@@ -1105,10 +1105,10 @@ void EventHub::injectMotionEvent(MotionEvent * motion, int32_t syncMode, int32_t
             unsigned int n = 0;
             if(motion->getSource() == 0x1002){
                 ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
-                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 2);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, -1);
             } else {
-                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 0);
-                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 1);
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 2);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, -1);
             }
             ADD_EVENT(EV_SYN, SYN_REPORT, 0);
             std::scoped_lock _l(mLock);
@@ -1125,8 +1125,8 @@ void EventHub::injectMotionEvent(MotionEvent * motion, int32_t syncMode, int32_t
                 ADD_EVENT(EV_ABS, ABS_MT_SLOT, 1);
                 ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 2);
             } else {
-                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 0);
-                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 1);
+                ADD_EVENT(EV_ABS, ABS_MT_SLOT, 2);
+                ADD_EVENT(EV_ABS, ABS_MT_TRACKING_ID, 3);
             }
             ADD_EVENT(EV_ABS, ABS_MT_POSITION_X, (int)motion->getX(0));
             ADD_EVENT(EV_ABS, ABS_MT_POSITION_Y, (int)motion->getY(0));
