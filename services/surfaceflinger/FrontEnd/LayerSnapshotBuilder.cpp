@@ -1040,11 +1040,11 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
         bool isPackageLayer = (!mTopPackageName.empty() && snapshot_name.starts_with(mTopPackageName));
         bool isCaptionLayer = (!mCaptionName.empty() && snapshot_name.find(mCaptionName) != std::string::npos);
         if ((isPackageLayer || isCaptionLayer)
-                && !mTopPackageName.starts_with("com.android.systemui")) {
+                && !mTopPackageName.starts_with("com.android.systemui")
+                && !mTopPackageName.starts_with("com.android.permissioncontroller")) {
             mRealActivityWidth = 0.0;
             forEachSnapshot([&](const LayerSnapshot& mSnapshot) {
-                if (mSnapshot.name.starts_with(mTopPackageName)
-                        || mSnapshot.name.starts_with("com.android.wallpaper")) {
+                if (mSnapshot.name.starts_with(mTopPackageName)) {
                     bool found = false;
                     const LayerSnapshot* tmpSnapShot = &mSnapshot;
                     while (tmpSnapShot->mParentSnapshot != nullptr) {
@@ -1069,7 +1069,6 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
                         // when mRealActivityWidth is greater than the parent layer width, reset it.
                         if (mRealActivityWidth > taskLayerWidth && taskLayerWidth > 0) {
                             isMutliLayerWindows = false;
-                            mRealActivityWidth = 0;
                         }
                         if (mSnapshot.name.find("com.android.wallpaper") != std::string::npos) {
                             isWallpaperLayer = true;
