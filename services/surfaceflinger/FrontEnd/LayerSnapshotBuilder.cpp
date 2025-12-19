@@ -1066,16 +1066,18 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
                             isMutliLayerWindows = true;
                         }
                         mRealActivityWidth += mSnapshot.geomLayerBounds.right;
-                        // when mRealActivityWidth is greater than the parent layer width, reset it.
-                        if (mRealActivityWidth > taskLayerWidth && taskLayerWidth > 0) {
-                            isMutliLayerWindows = false;
-                        }
                         if (mSnapshot.name.find("com.android.wallpaper") != std::string::npos) {
                             isWallpaperLayer = true;
                         }
                     }
                 }
             });
+
+            // when mRealActivityWidth is greater than the parent layer width, reset it.
+            if (mRealActivityWidth > taskLayerWidth && taskLayerWidth > 0) {
+                isMutliLayerWindows = false;
+                mRealActivityWidth = 0;
+            }
 
             if (isWallpaperLayer || (mDisplayWidth > 0 && mRealActivityWidth > mDisplayWidth)) {
                 mRealActivityWidth = 0;
