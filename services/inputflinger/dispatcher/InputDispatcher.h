@@ -254,7 +254,8 @@ private:
             int32_t pointerId) const REQUIRES(mLock);
 
     std::vector<sp<android::gui::WindowInfoHandle>> findTouchedSpyWindowsAtLocked(
-            int32_t displayId, float x, float y, bool isStylus) const REQUIRES(mLock);
+            int32_t displayId, float x, float y, bool isStylus,
+            DeviceId deviceId) const REQUIRES(mLock);
 
     sp<android::gui::WindowInfoHandle> findTouchedForegroundWindowLocked(int32_t displayId) const
             REQUIRES(mLock);
@@ -680,6 +681,10 @@ private:
     std::tuple<TouchState*, TouchedWindow*, int32_t /*displayId*/>
     findTouchStateWindowAndDisplayLocked(const sp<IBinder>& token) REQUIRES(mLock);
 
+    std::tuple<const TouchState*, const TouchedWindow*, int32_t /*displayId*/>
+    findTouchStateWindowAndDisplayLocked(const sp<IBinder>& token) const REQUIRES(mLock);
+    bool windowHasTouchingPointersLocked(const sp<android::gui::WindowInfoHandle>& windowHandle,
+                                         DeviceId deviceId) const REQUIRES(mLock);
     // Statistics gathering.
     LatencyAggregator mLatencyAggregator GUARDED_BY(mLock);
     LatencyTracker mLatencyTracker GUARDED_BY(mLock);
