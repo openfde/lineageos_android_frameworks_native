@@ -128,7 +128,7 @@ public:
      */
     virtual bool isStaleEvent(nsecs_t currentTime, nsecs_t eventTime) {
         static const std::chrono::duration STALE_EVENT_TIMEOUT =
-                std::chrono::seconds(10) * android::base::HwTimeoutMultiplier();
+                std::chrono::seconds(10000) * android::base::HwTimeoutMultiplier();
         return std::chrono::nanoseconds(currentTime - eventTime) >= STALE_EVENT_TIMEOUT;
     }
 
