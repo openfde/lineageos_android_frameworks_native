@@ -1372,6 +1372,21 @@ SurfaceComposerClient::Transaction& SurfaceComposerClient::Transaction::setPosit
     return *this;
 }
 
+SurfaceComposerClient::Transaction& SurfaceComposerClient::Transaction::setMirrorPosition(
+        const sp<SurfaceControl>& sc, float x, float y) {
+    layer_state_t* s = getLayerState(sc);
+    if (!s) {
+        mStatus = BAD_INDEX;
+        return *this;
+    }
+    s->what |= layer_state_t::eMirrorPositionChanged;
+    s->mirror_x = x;
+    s->mirror_y = y;
+
+    registerSurfaceControlForCallback(sc);
+    return *this;
+}
+
 SurfaceComposerClient::Transaction& SurfaceComposerClient::Transaction::show(
         const sp<SurfaceControl>& sc) {
     return setFlags(sc, 0, layer_state_t::eLayerHidden);

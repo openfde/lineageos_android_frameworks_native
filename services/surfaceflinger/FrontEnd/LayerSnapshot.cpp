@@ -483,6 +483,10 @@ void LayerSnapshot::merge(const RequestedLayerState& requested, bool forceUpdate
         localTransformInverse = localTransform.inverse();
     }
 
+    if (forceUpdate || requested.what & layer_state_t::eMirrorPositionChanged) {
+        mirrorTransform = requested.getMirrorTransform();
+    }
+
     if (forceUpdate || requested.what & (layer_state_t::eColorChanged) ||
         requested.changes.test(RequestedLayerState::Changes::BufferSize)) {
         color.rgb = requested.getColor().rgb;

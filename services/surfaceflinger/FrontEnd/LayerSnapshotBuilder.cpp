@@ -936,6 +936,12 @@ void LayerSnapshotBuilder::updateSnapshot(LayerSnapshot& snapshot, const Args& a
         updateInput(snapshot, requested, parentSnapshot, path, args);
     }
 
+    if (forceUpdate || snapshot.clientChanges & layer_state_t::eMirrorPositionChanged) {
+        if (snapshot.mirrorTransform.tx() != 0 || snapshot.mirrorTransform.ty() != 0) {
+            snapshot.geomLayerTransform.set(snapshot.mirrorTransform.tx(), snapshot.mirrorTransform.ty());
+        }
+    }
+
     // computed snapshot properties
     snapshot.forceClientComposition =
             snapshot.shadowSettings.length > 0 || snapshot.stretchEffect.hasEffect();
