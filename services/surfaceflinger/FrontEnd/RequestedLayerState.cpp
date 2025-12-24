@@ -109,6 +109,7 @@ RequestedLayerState::RequestedLayerState(const LayerCreationArgs& args)
     hasColorTransform = false;
     bufferTransform = 0;
     requestedTransform.reset();
+    requestedMirrorTransform.reset();
     bufferData = std::make_shared<BufferData>();
     bufferData->frameNumber = 0;
     bufferData->acquireFence = sp<Fence>::make(-1);
@@ -312,6 +313,10 @@ void RequestedLayerState::merge(const ResolvedComposerState& resolvedComposerSta
         requestedTransform.set(x, y);
     }
 
+    if (clientState.what & layer_state_t::eMirrorPositionChanged) {
+        requestedMirrorTransform.set(mirror_x, mirror_y);
+    }
+
     if (clientState.what & layer_state_t::eMatrixChanged) {
         requestedTransform.set(matrix.dsdx, matrix.dtdy, matrix.dtdx, matrix.dsdy);
     }
@@ -392,6 +397,10 @@ ui::Transform RequestedLayerState::getTransform(uint32_t displayRotationFlags) c
     transform.set(sx, 0, 0, sy);
     transform.set(static_cast<float>(destRect.left), static_cast<float>(destRect.top));
     return transform;
+}
+
+ui::Transform RequestedLayerState::getMirrorTransform() const {
+    return requestedMirrorTransform;
 }
 
 std::string RequestedLayerState::getDebugString() const {
@@ -595,7 +604,7 @@ bool RequestedLayerState::isSimpleBufferUpdate(const layer_state_t& s) const {
     }
 
     bool changedFlags = diff(s);
-    static constexpr auto deniedChanges = layer_state_t::ePositionChanged |
+    static constexpr auto deniedChanges = layer_state_t::ePositionChanged | layer_state_t::eMirrorPositionChanged |
             layer_state_t::eAlphaChanged | layer_state_t::eColorTransformChanged |
             layer_state_t::eBackgroundColorChanged | layer_state_t::eMatrixChanged |
             layer_state_t::eCornerRadiusChanged | layer_state_t::eBackgroundBlurRadiusChanged |

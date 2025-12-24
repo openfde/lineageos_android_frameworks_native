@@ -65,6 +65,7 @@ struct RequestedLayerState : layer_state_t {
 
     // Currently we only care about the primary display
     ui::Transform getTransform(uint32_t displayRotationFlags) const;
+    ui::Transform getMirrorTransform() const;
     ui::Size getUnrotatedBufferSize(uint32_t displayRotationFlags) const;
     bool canBeDestroyed() const;
     bool isRoot() const;
@@ -109,6 +110,7 @@ struct RequestedLayerState : layer_state_t {
     bool potentialCursor{false};
     bool protectedByApp{false}; // application requires protected path to external sink
     ui::Transform requestedTransform;
+    ui::Transform requestedMirrorTransform;
     std::shared_ptr<FenceTime> acquireFenceTime;
     std::shared_ptr<renderengine::ExternalTexture> externalTexture;
     gui::GameMode gameMode;

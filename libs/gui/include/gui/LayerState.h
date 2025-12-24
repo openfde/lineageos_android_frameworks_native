@@ -216,6 +216,7 @@ struct layer_state_t {
         eTrustedOverlayChanged = 0x4000'00000000,
         eDropInputModeChanged = 0x8000'00000000,
         eExtendedRangeBrightnessChanged = 0x10000'00000000,
+        eMirrorPositionChanged = 0x20000'00000000,
     };
 
     layer_state_t();
@@ -305,6 +306,8 @@ struct layer_state_t {
     uint64_t what;
     float x;
     float y;
+    float mirror_x;
+    float mirror_y;
     int32_t z;
     ui::LayerStack layerStack = ui::DEFAULT_LAYER_STACK;
     uint32_t flags;

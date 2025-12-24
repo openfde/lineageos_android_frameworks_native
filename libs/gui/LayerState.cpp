@@ -61,6 +61,8 @@ layer_state_t::layer_state_t()
         what(0),
         x(0),
         y(0),
+        mirror_x(0),
+        mirror_y(0),
         z(0),
         flags(0),
         mask(0),
@@ -106,6 +108,8 @@ status_t layer_state_t::write(Parcel& output) const
     SAFE_PARCEL(output.writeUint64, what);
     SAFE_PARCEL(output.writeFloat, x);
     SAFE_PARCEL(output.writeFloat, y);
+    SAFE_PARCEL(output.writeFloat, mirror_x);
+    SAFE_PARCEL(output.writeFloat, mirror_y);
     SAFE_PARCEL(output.writeInt32, z);
     SAFE_PARCEL(output.writeUint32, layerStack.id);
     SAFE_PARCEL(output.writeUint32, flags);
@@ -210,6 +214,8 @@ status_t layer_state_t::read(const Parcel& input)
     SAFE_PARCEL(input.readUint64, &what);
     SAFE_PARCEL(input.readFloat, &x);
     SAFE_PARCEL(input.readFloat, &y);
+    SAFE_PARCEL(input.readFloat, &mirror_x);
+    SAFE_PARCEL(input.readFloat, &mirror_y);
     SAFE_PARCEL(input.readInt32, &z);
     SAFE_PARCEL(input.readUint32, &layerStack.id);
 
@@ -532,6 +538,11 @@ void layer_state_t::merge(const layer_state_t& other) {
         x = other.x;
         y = other.y;
     }
+    if (other.what & eMirrorPositionChanged) {
+        what |= eMirrorPositionChanged;
+        mirror_x = other.mirror_x;
+        mirror_y = other.mirror_y;
+    }
     if (other.what & eLayerChanged) {
         what |= eLayerChanged;
         what &= ~eRelativeLayerChanged;
@@ -744,6 +755,7 @@ void layer_state_t::merge(const layer_state_t& other) {
 uint64_t layer_state_t::diff(const layer_state_t& other) const {
     uint64_t diff = 0;
     CHECK_DIFF2(diff, ePositionChanged, other, x, y);
+    CHECK_DIFF2(diff, eMirrorPositionChanged, other, mirror_x, mirror_y);
     if (other.what & eLayerChanged) {
         diff |= eLayerChanged;
         diff &= ~eRelativeLayerChanged;

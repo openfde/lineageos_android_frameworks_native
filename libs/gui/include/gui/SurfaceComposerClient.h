@@ -516,6 +516,7 @@ public:
         Transaction& show(const sp<SurfaceControl>& sc);
         Transaction& hide(const sp<SurfaceControl>& sc);
         Transaction& setPosition(const sp<SurfaceControl>& sc, float x, float y);
+        Transaction& setMirrorPosition(const sp<SurfaceControl>& sc, float x, float y);
         // b/243180033 remove once functions are not called from vendor code
         Transaction& setSize(const sp<SurfaceControl>&, uint32_t, uint32_t) { return *this; }
         Transaction& setLayer(const sp<SurfaceControl>& sc,

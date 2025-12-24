@@ -81,6 +81,7 @@ struct LayerSnapshot : public compositionengine::LayerFECompositionState {
     ui::Transform localTransformInverse;
     gui::WindowInfo inputInfo;
     ui::Transform localTransform;
+    ui::Transform mirrorTransform;
     gui::DropInputMode dropInputMode;
     bool isTrustedOverlay;
     gui::GameMode gameMode;
