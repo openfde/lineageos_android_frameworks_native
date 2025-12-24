@@ -466,10 +466,18 @@ void LayerSnapshotBuilder::updateSnapshots(const Args& args) {
     mCaptionName = caption_name;
     mTaskName = task_name;
     mTopPackageName = top_package_name;
+
     if (strcasecmp(enable_caption_sync, "true") != 0) {
         mEnableCaptionSync = false;
     } else {
         mEnableCaptionSync = true;
+    }
+
+    if (mTopPackageName.starts_with("android")
+            || mTopPackageName.starts_with("com.android.gallery3d")
+            || mTopPackageName.starts_with("com.android.systemui")
+            || mTopPackageName.starts_with("com.android.permissioncontroller")) {
+        mEnableCaptionSync = false;
     }
     // [openfde end]
 
@@ -1039,9 +1047,7 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
         bool isMutliLayerWindows = false;
         bool isPackageLayer = (!mTopPackageName.empty() && snapshot_name.starts_with(mTopPackageName));
         bool isCaptionLayer = (!mCaptionName.empty() && snapshot_name.find(mCaptionName) != std::string::npos);
-        if ((isPackageLayer || isCaptionLayer)
-                && !mTopPackageName.starts_with("com.android.systemui")
-                && !mTopPackageName.starts_with("com.android.permissioncontroller")) {
+        if ((isPackageLayer || isCaptionLayer)) {
             mRealActivityWidth = 0.0;
             forEachSnapshot([&](const LayerSnapshot& mSnapshot) {
                 if (mSnapshot.name.starts_with(mTopPackageName)) {
