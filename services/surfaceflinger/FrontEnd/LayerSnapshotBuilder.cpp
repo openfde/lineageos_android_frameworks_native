@@ -451,34 +451,34 @@ void LayerSnapshotBuilder::updateSnapshots(const Args& args) {
     }
 
     // [openfde add] fix caption and window are not synchronized when window is scaling
-    char top_package_name[PROPERTY_VALUE_MAX];
-    property_get("com.fde.top_package_name", top_package_name, "");
-    char caption_name[PROPERTY_VALUE_MAX];
-    property_get("com.fde.caption_name", caption_name, "");
-    char task_name[PROPERTY_VALUE_MAX];
-    property_get("com.fde.task_name", task_name, "");
-    char enable_caption_sync[PROPERTY_VALUE_MAX];
-    property_get("persist.debug.caption_sync", enable_caption_sync, "true");
-    char display_width[PROPERTY_VALUE_MAX];
-    property_get("openfde.display_width", display_width, "0");
-    mDisplayWidth = atoi(display_width);
-
-    mCaptionName = caption_name;
-    mTaskName = task_name;
-    mTopPackageName = top_package_name;
-
-    if (strcasecmp(enable_caption_sync, "true") != 0) {
-        mEnableCaptionSync = false;
-    } else {
-        mEnableCaptionSync = true;
-    }
-
-    if (mTopPackageName.starts_with("android")
-            || mTopPackageName.starts_with("com.android.gallery3d")
-            || mTopPackageName.starts_with("com.android.systemui")
-            || mTopPackageName.starts_with("com.android.permissioncontroller")) {
-        mEnableCaptionSync = false;
-    }
+//    char top_package_name[PROPERTY_VALUE_MAX];
+//    property_get("com.fde.top_package_name", top_package_name, "");
+//    char caption_name[PROPERTY_VALUE_MAX];
+//    property_get("com.fde.caption_name", caption_name, "");
+//    char task_name[PROPERTY_VALUE_MAX];
+//    property_get("com.fde.task_name", task_name, "");
+//    char enable_caption_sync[PROPERTY_VALUE_MAX];
+//    property_get("persist.debug.caption_sync", enable_caption_sync, "true");
+//    char display_width[PROPERTY_VALUE_MAX];
+//    property_get("openfde.display_width", display_width, "0");
+//    mDisplayWidth = atoi(display_width);
+//
+//    mCaptionName = caption_name;
+//    mTaskName = task_name;
+//    mTopPackageName = top_package_name;
+//
+//    if (strcasecmp(enable_caption_sync, "true") != 0) {
+//        mEnableCaptionSync = false;
+//    } else {
+//        mEnableCaptionSync = true;
+//    }
+//
+//    if (mTopPackageName.starts_with("android")
+//            || mTopPackageName.starts_with("com.android.gallery3d")
+//            || mTopPackageName.starts_with("com.android.systemui")
+//            || mTopPackageName.starts_with("com.android.permissioncontroller")) {
+//        mEnableCaptionSync = false;
+//    }
     // [openfde end]
 
     LayerHierarchy::TraversalPath root = LayerHierarchy::TraversalPath::ROOT;
@@ -909,13 +909,13 @@ void LayerSnapshotBuilder::updateSnapshot(LayerSnapshot& snapshot, const Args& a
         updateLayerBounds(snapshot, requested, parentSnapshot, primaryDisplayRotationFlags);
     } else {
         // [openfde add] fix caption and window are not synchronized when window is scaling
-        if (!mCaptionName.empty() && mEnableCaptionSync) {
-            std::string  snapshot_name(snapshot.name);
-            if (snapshot_name.find(mCaptionName) != std::string::npos) {
-                uint32_t primaryDisplayRotationFlags = getPrimaryDisplayRotationFlags(args.displays);
-                updateLayerBounds(snapshot, requested, parentSnapshot, primaryDisplayRotationFlags);
-            }
-        }
+//        if (!mCaptionName.empty() && mEnableCaptionSync) {
+//            std::string  snapshot_name(snapshot.name);
+//            if (snapshot_name.find(mCaptionName) != std::string::npos) {
+//                uint32_t primaryDisplayRotationFlags = getPrimaryDisplayRotationFlags(args.displays);
+//                updateLayerBounds(snapshot, requested, parentSnapshot, primaryDisplayRotationFlags);
+//            }
+//        }
         // [openfde end]
     }
 
@@ -1045,74 +1045,74 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
     snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(parentBounds);
 
     // [openfde add] fix caption and window are not synchronized when window is scaling
-    if (mEnableCaptionSync) {
-        std::string snapshot_name(snapshot.name);
-        std::string app_class_name = "";
-        float taskLayerWidth = 0.0;
-        bool isWallpaperLayer = false;
-        bool isMutliLayerWindows = false;
-        bool isPackageLayer = (!mTopPackageName.empty() && snapshot_name.starts_with(mTopPackageName));
-        bool isCaptionLayer = (!mCaptionName.empty() && snapshot_name.find(mCaptionName) != std::string::npos);
-        if ((isPackageLayer || isCaptionLayer)) {
-            mRealActivityWidth = 0.0;
-            forEachSnapshot([&](const LayerSnapshot& mSnapshot) {
-                if (mSnapshot.name.starts_with(mTopPackageName)) {
-                    bool found = false;
-                    const LayerSnapshot* tmpSnapShot = &mSnapshot;
-                    while (tmpSnapShot->mParentSnapshot != nullptr) {
-                        // find out if the app window is in the same parent layer as the captionbar
-                        if (tmpSnapShot->mParentSnapshot->name.starts_with(mTaskName)) {
-                            taskLayerWidth = tmpSnapShot->mParentSnapshot->geomLayerBounds.right;
-                            found = true;
-                            break;
-                        }
-                        tmpSnapShot = tmpSnapShot->mParentSnapshot;
-                    }
-                    if (found) {
-                        app_class_name =  mSnapshot.name.substr(mSnapshot.name.find("/") + 1);
-                        if (app_class_name == "") {
-                            app_class_name = mSnapshot.name;
-                        }
-                        // when app have mutli-windows, set the flag.
-                        if (mRealActivityWidth > 0) {
-                            isMutliLayerWindows = true;
-                        }
-                        mRealActivityWidth += mSnapshot.geomLayerBounds.right;
-                        if (mSnapshot.name.find("com.android.wallpaper") != std::string::npos) {
-                            isWallpaperLayer = true;
-                        }
-                    }
-                }
-            });
-
-            // when mRealActivityWidth is greater than the parent layer width, reset it.
-            if (mRealActivityWidth > taskLayerWidth && taskLayerWidth > 0) {
-                isMutliLayerWindows = false;
-                mRealActivityWidth = 0;
-            }
-
-            if (isWallpaperLayer || (mDisplayWidth > 0 && mRealActivityWidth > mDisplayWidth)) {
-                mRealActivityWidth = 0;
-            }
-
-            if (isCaptionLayer && mRealActivityWidth > 0) {
-                FloatRect mActivityCrop = snapshot.geomLayerBounds;
-                mActivityCrop.right = mRealActivityWidth - 1;
-                snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(mActivityCrop);
-            }
-
-            {
-                // notify CaptionWindowDecoration to set an appropriate Buffer size
-                if (app_class_name != "" && !isMutliLayerWindows) {
-                    property_set("com.fde.package_with_caption", app_class_name.c_str());
-                } else {
-                    property_set("com.fde.package_with_caption", mTopPackageName.c_str());
-                }
-                std::string data = std::to_string(static_cast<int>(mRealActivityWidth));
-                property_set("com.fde.caption_width", data.c_str());
-            }
-        }
-    }
+//    if (mEnableCaptionSync) {
+//        std::string snapshot_name(snapshot.name);
+//        std::string app_class_name = "";
+//        float taskLayerWidth = 0.0;
+//        bool isWallpaperLayer = false;
+//        bool isMutliLayerWindows = false;
+//        bool isPackageLayer = (!mTopPackageName.empty() && snapshot_name.starts_with(mTopPackageName));
+//        bool isCaptionLayer = (!mCaptionName.empty() && snapshot_name.find(mCaptionName) != std::string::npos);
+//        if ((isPackageLayer || isCaptionLayer)) {
+//            mRealActivityWidth = 0.0;
+//            forEachSnapshot([&](const LayerSnapshot& mSnapshot) {
+//                if (mSnapshot.name.starts_with(mTopPackageName)) {
+//                    bool found = false;
+//                    const LayerSnapshot* tmpSnapShot = &mSnapshot;
+//                    while (tmpSnapShot->mParentSnapshot != nullptr) {
+//                        // find out if the app window is in the same parent layer as the captionbar
+//                        if (tmpSnapShot->mParentSnapshot->name.starts_with(mTaskName)) {
+//                            taskLayerWidth = tmpSnapShot->mParentSnapshot->geomLayerBounds.right;
+//                            found = true;
+//                            break;
+//                        }
+//                        tmpSnapShot = tmpSnapShot->mParentSnapshot;
+//                    }
+//                    if (found) {
+//                        app_class_name =  mSnapshot.name.substr(mSnapshot.name.find("/") + 1);
+//                        if (app_class_name == "") {
+//                            app_class_name = mSnapshot.name;
+//                        }
+//                        // when app have mutli-windows, set the flag.
+//                        if (mRealActivityWidth > 0) {
+//                            isMutliLayerWindows = true;
+//                        }
+//                        mRealActivityWidth += mSnapshot.geomLayerBounds.right;
+//                        if (mSnapshot.name.find("com.android.wallpaper") != std::string::npos) {
+//                            isWallpaperLayer = true;
+//                        }
+//                    }
+//                }
+//            });
+//
+//            // when mRealActivityWidth is greater than the parent layer width, reset it.
+//            if (mRealActivityWidth > taskLayerWidth && taskLayerWidth > 0) {
+//                isMutliLayerWindows = false;
+//                mRealActivityWidth = 0;
+//            }
+//
+//            if (isWallpaperLayer || (mDisplayWidth > 0 && mRealActivityWidth > mDisplayWidth)) {
+//                mRealActivityWidth = 0;
+//            }
+//
+//            if (isCaptionLayer && mRealActivityWidth > 0) {
+//                FloatRect mActivityCrop = snapshot.geomLayerBounds;
+//                mActivityCrop.right = mRealActivityWidth - 1;
+//                snapshot.geomLayerBounds = snapshot.geomLayerBounds.intersect(mActivityCrop);
+//            }
+//
+//            {
+//                // notify CaptionWindowDecoration to set an appropriate Buffer size
+//                if (app_class_name != "" && !isMutliLayerWindows) {
+//                    property_set("com.fde.package_with_caption", app_class_name.c_str());
+//                } else {
+//                    property_set("com.fde.package_with_caption", mTopPackageName.c_str());
+//                }
+//                std::string data = std::to_string(static_cast<int>(mRealActivityWidth));
+//                property_set("com.fde.caption_width", data.c_str());
+//            }
+//        }
+//    }
     // [openfde end]
 
     snapshot.transformedBounds = snapshot.geomLayerTransform.transform(snapshot.geomLayerBounds);
