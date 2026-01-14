@@ -1055,6 +1055,9 @@ void LayerSnapshotBuilder::updateLayerBounds(LayerSnapshot& snapshot,
                     bool found = false;
                     const LayerSnapshot* tmpSnapShot = &mSnapshot;
                     while (tmpSnapShot->mParentSnapshot != nullptr) {
+                        if (tmpSnapShot->mParentSnapshot->name == "") {
+                            break;
+                        }
                         // find out if the app window is in the same parent layer as the captionbar
                         if (tmpSnapShot->mParentSnapshot->name.starts_with(mTaskName)) {
                             taskLayerWidth = tmpSnapShot->mParentSnapshot->geomLayerBounds.right;
