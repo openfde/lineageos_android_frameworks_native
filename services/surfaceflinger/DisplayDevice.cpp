@@ -87,6 +87,13 @@ DisplayDevice::DisplayDevice(DisplayDeviceCreationArgs& args)
     }
 
     mCompositionDisplay->getRenderSurface()->initialize();
+    // [openfde add] fix tencent.wemeet.app cant share screen in x11 mode
+    if (isVirtual()) {
+        mCompositionDisplay->getRenderSurface()->setBufferPixelFormat(
+                static_cast<ui::PixelFormat>(HAL_PIXEL_FORMAT_RGBA_8888));
+    }
+    // [openfde end]
+
 
     setPowerMode(args.initialPowerMode);
 
