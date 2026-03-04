@@ -233,6 +233,14 @@ bool GraphicBuffer::needsReallocation(uint32_t inWidth, uint32_t inHeight,
     return false;
 }
 
+int GraphicBuffer::needCovertFormat()
+{
+    if (ANativeWindowBuffer::handle != nullptr) {
+        return getBufferMapper().needCovertFormat(ANativeWindowBuffer::handle);
+    }
+    return 0;
+}
+
 status_t GraphicBuffer::initWithSize(uint32_t inWidth, uint32_t inHeight,
         PixelFormat inFormat, uint32_t inLayerCount, uint64_t inUsage,
         std::string requestorName)
