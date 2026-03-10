@@ -20,12 +20,11 @@
 
 namespace {
 
-const bool IS_DEBUGGABLE_BUILD =
-#if defined(__ANDROID__)
-        android::base::GetBoolProperty("ro.debuggable", false);
-#else
-        true;
-#endif
+const bool IS_DEBUGGABLE_BUILD = true;
+//#if defined(__ANDROID__)
+//        android::base::GetBoolProperty("ro.debuggable", false);
+//#else
+//#endif
 
 } // namespace
 

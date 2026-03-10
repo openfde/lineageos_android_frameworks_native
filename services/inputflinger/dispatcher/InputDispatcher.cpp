@@ -17,7 +17,7 @@
 #define LOG_TAG "InputDispatcher"
 #define ATRACE_TAG ATRACE_TAG_INPUT
 
-#define LOG_NDEBUG 1
+#define LOG_NDEBUG 0
 
 #include <android-base/chrono_utils.h>
 #include <android-base/logging.h>
