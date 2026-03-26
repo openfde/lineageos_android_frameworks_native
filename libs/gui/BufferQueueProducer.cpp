@@ -395,11 +395,15 @@ status_t BufferQueueProducer::dequeueBuffer(int* outSlot, sp<android::Fence>* ou
                                             FrameEventHistoryDelta* outTimestamps) {
     ATRACE_CALL();
     { // Autolock scope
+        BQ_LOGE("DEBUG_BQ: dequeueBuffer ENTER - Consumer: %s, usage: %#" PRIx64,
+                mCore->mConsumerName.c_str(), usage);
         std::lock_guard<std::mutex> lock(mCore->mMutex);
         mConsumerName = mCore->mConsumerName;
 
         if (mCore->mIsAbandoned) {
             BQ_LOGE("dequeueBuffer: BufferQueue has been abandoned");
+            BQ_LOGE("DEBUG_BQ: %s is ABANDONED. ActiveBuffers: %zu, FreeBuffers: %zu",
+                    mCore->mConsumerName.c_str(), mCore->mActiveBuffers.size(), mCore->mFreeBuffers.size());
             return NO_INIT;
         }
 
@@ -455,7 +459,10 @@ status_t BufferQueueProducer::dequeueBuffer(int* outSlot, sp<android::Fence>* ou
 
         int found = BufferItem::INVALID_BUFFER_SLOT;
         while (found == BufferItem::INVALID_BUFFER_SLOT) {
+            BQ_LOGE("DEBUG_BQ: %s starts waiting for free slot", mCore->mConsumerName.c_str());
             status_t status = waitForFreeSlotThenRelock(FreeSlotCaller::Dequeue, lock, &found);
+            BQ_LOGE("DEBUG_BQ: %s finished waiting, status: %d, found slot: %d",
+                    mCore->mConsumerName.c_str(), status, found);
             if (status != NO_ERROR) {
                 return status;
             }
@@ -605,6 +612,8 @@ status_t BufferQueueProducer::dequeueBuffer(int* outSlot, sp<android::Fence>* ou
             if (mCore->mIsAbandoned) {
                 mCore->mFreeSlots.insert(*outSlot);
                 mCore->clearBufferSlotLocked(*outSlot);
+                BQ_LOGE("DEBUG_BQ: %s is ABANDONED. ActiveBuffers: %zu, FreeBuffers: %zu",
+                        mCore->mConsumerName.c_str(), mCore->mActiveBuffers.size(), mCore->mFreeBuffers.size());
                 BQ_LOGE("dequeueBuffer: BufferQueue has been abandoned");
                 return NO_INIT;
             }
