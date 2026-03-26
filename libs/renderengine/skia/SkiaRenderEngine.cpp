@@ -1075,13 +1075,15 @@ void SkiaRenderEngine::drawLayersInternal(
 
                         dst_gb = new GraphicBuffer(
                                 width, height, HAL_PIXEL_FORMAT_RGB_565,
-                                GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER);
+                                GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER
+                                    | GRALLOC_USAGE_PRIVATE_0);
 
                         void* dst_data = nullptr;
                         int dst_result = dst_gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, &dst_data);
                         if (dst_result == 0 && dst_data != nullptr) {
                             unsigned char* rgb565 = (unsigned char*) dst_data;
 #if USE_GPU_COVERT
+                            int stride = graphicBuffer->getStride();
                             const native_handle_t* dst_handle = dst_gb->getNativeBuffer()->handle;
                             int rgbFd = dst_handle->data[0];
                             const native_handle_t* src_handle = graphicBuffer->getNativeBuffer()->handle;
