@@ -92,10 +92,10 @@ EGLConsumer::EGLConsumer() : mEglDisplay(EGL_NO_DISPLAY), mEglContext(EGL_NO_CON
         mIsMesa = true;
     }
     mIsEglProxy = false;
-    char prop_egl_type[PROPERTY_VALUE_MAX];
     property_get("ro.hardware.graphics.egl", prop_egl_type, "none");
     if (strcmp(prop_egl_type, "proxy") == 0) {
         mIsEglProxy = true;
+    }
 }
 
 status_t EGLConsumer::updateTexImage(SurfaceTexture& st) {
