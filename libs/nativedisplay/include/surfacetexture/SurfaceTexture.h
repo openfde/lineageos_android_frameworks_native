@@ -153,7 +153,8 @@ public:
      * from the BufferItem sub parts.
      */
     static void computeTransformMatrix(float outTransform[16], const sp<GraphicBuffer>& buf,
-                                       const Rect& cropRect, uint32_t transform, bool filtering);
+                                       const Rect& cropRect, uint32_t transform, bool filtering,
+                                       bool useProxy = false, const String8& packageName = String8());
 
     /**
      * Scale the crop down horizontally or vertically such that it has the
@@ -430,6 +431,8 @@ protected:
      * setFilteringEnabled().
      */
     bool mFilteringEnabled;
+
+    bool mUseEglProxy;
 
     /**
      * mTexName is the name of the OpenGL texture to which streamed images will
