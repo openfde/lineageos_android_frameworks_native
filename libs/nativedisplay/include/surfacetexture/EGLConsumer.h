@@ -307,6 +307,7 @@ protected:
 
     bool mIsMesa;
     bool mNeedConvert;
+    bool mIsEglProxy;
 };
 
 } // namespace android
