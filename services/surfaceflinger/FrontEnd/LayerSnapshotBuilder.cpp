@@ -914,6 +914,7 @@ void LayerSnapshotBuilder::updateSnapshot(LayerSnapshot& snapshot, const Args& a
             if (snapshot_name.find(mCaptionName) != std::string::npos) {
                 uint32_t primaryDisplayRotationFlags = getPrimaryDisplayRotationFlags(args.displays);
                 updateLayerBounds(snapshot, requested, parentSnapshot, primaryDisplayRotationFlags);
+                updateInput(snapshot, requested, parentSnapshot, path, args);
             }
         }
         // [openfde end]
