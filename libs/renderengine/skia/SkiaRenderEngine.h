@@ -41,8 +41,6 @@
 #include "filters/LinearEffect.h"
 #include "filters/StretchShaderFactory.h"
 
-#include "YV12ToRGB565Converter.h"
-
 class SkData;
 
 struct SkPoint3;
@@ -139,11 +137,7 @@ private:
                             const std::vector<LayerSettings>& layers,
                             const std::shared_ptr<ExternalTexture>& buffer,
                             base::unique_fd&& bufferFence) override final;
-    bool gpu_covert_rgb_565(YV12ToRGB565Converter::CovertInfo* info, unsigned char* yv12Buffer,
-                unsigned char* rgb565Buffer,
-                int width, int height, int stride);
-    bool gpu_covert_rgb_565_by_fd(YV12ToRGB565Converter::CovertInfo* info, int yv12Fd, int rgbFd,
-                int width, int height, int stride);
+
     void dump(std::string& result) override final;
 
     // If requiresLinearEffect is true or the layer has a stretchEffect a new shader is returned.
@@ -196,8 +190,6 @@ private:
     // Same as above, but for protected content (eg. DRM)
     sk_sp<GrDirectContext> mProtectedGrContext;
     bool mInProtectedContext = false;
-
-    YV12ToRGB565Converter::CovertInfo mCovertInfo;
 };
 
 } // namespace skia

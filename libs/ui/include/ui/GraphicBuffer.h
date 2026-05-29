@@ -183,8 +183,6 @@ public:
     bool needsReallocation(uint32_t inWidth, uint32_t inHeight,
             PixelFormat inFormat, uint32_t inLayerCount, uint64_t inUsage);
 
-    int needCovertFormat();
-
     // For the following two lock functions, if bytesPerStride or bytesPerPixel
     // are unknown or variable, -1 will be returned
     status_t lock(uint32_t inUsage, void** vaddr, int32_t* outBytesPerPixel = nullptr,

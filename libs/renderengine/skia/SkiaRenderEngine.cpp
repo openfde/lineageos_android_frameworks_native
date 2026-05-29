@@ -85,9 +85,6 @@
 #include "system/graphics-base-v1.0.h"
 #include <cutils/properties.h>
 
-#define USE_GPU_COVERT 0
-#define ALIGN(value, base) (((value) + ((base)-1)) & ~((base)-1))
-
 namespace {
 
 // Debugging settings
@@ -282,18 +279,6 @@ SkiaRenderEngine::SkiaRenderEngine(Threaded threaded, PixelFormat pixelFormat,
         mBlurFilter = new KawaseBlurFilter();
     }
     mCapture = std::make_unique<SkiaCapture>();
-
-#if USE_GPU_COVERT
-    pthread_t thread;
-    mCovertInfo.mEglDisplay = EGL_NO_DISPLAY;
-    mCovertInfo.mEglContext = EGL_NO_CONTEXT;
-    mCovertInfo.mEglSurface = EGL_NO_SURFACE;
-    mCovertInfo.mProgram = 0;
-    mCovertInfo.mInitialized = false;
-    mCovertInfo.width = 2560;
-    mCovertInfo.height = 1600;
-    status_t err = pthread_create(&thread, nullptr, YV12ToRGB565Converter::egl_covert_loop, &mCovertInfo);
-#endif
 }
 
 SkiaRenderEngine::~SkiaRenderEngine() { }
@@ -410,11 +395,6 @@ void SkiaRenderEngine::mapExternalTextureBuffer(const sp<GraphicBuffer>& buffer,
     // same thread.
     if (!isThreaded()) {
         return;
-    }
-
-    if (buffer->getPixelFormat() == HAL_PIXEL_FORMAT_YV12
-            && buffer->needCovertFormat()) {
-        return ;
     }
     // We don't attempt to map a buffer if the buffer contains protected content. In GL this is
     // important because GPU resources for protected buffers are much more limited. (In Vk we
@@ -671,97 +651,6 @@ private:
     DISALLOW_COPY_AND_ASSIGN(DeferTextureCleanup);
     AutoBackendTexture::CleanupManager& mMgr;
 };
-
-#define YUV_R_COEFF 298
-#define YUV_G_COEFF1 100
-#define YUV_G_COEFF2 208
-#define YUV_B_COEFF 516
-#define YUV_R_V_COEFF 409
-#define YUV_BIAS 128
-void yv12_to_rgb565(const unsigned char* yv12_data, int width, int height, unsigned char* rgb_output) {
-
-    // 计算对齐后的UV宽度
-    int aligned_width = ALIGN(width, 256);
-    int aligned_half_width = aligned_width / 2;
-
-    // 获取各个平面指针（YV12格式：Y平面 -> V平面 -> U平面）
-    const uint8_t* y_plane = yv12_data;
-    const uint8_t* v_plane = y_plane + aligned_width * height;
-    const uint8_t* u_plane = v_plane + aligned_half_width * (height / 2);
-
-    // 预计算循环中的常量
-    int aligned_y_stride = aligned_width;
-    int aligned_uv_stride = aligned_half_width;
-
-    // 遍历所有行
-    for (int y = 0; y < height; y++) {
-        // 计算UV行索引
-        int uv_y = y / 2;
-        int uv_row_offset = uv_y * aligned_uv_stride;
-
-        // Y行起始位置
-        const uint8_t* y_row = y_plane + y * aligned_y_stride;
-
-        // RGB行起始位置
-        uint16_t* rgb_row = (uint16_t*)(rgb_output + y * aligned_width * 2);
-
-        int x;
-
-        // 处理有效像素区域 (0 到 width-1)
-        for (x = 0; x < width; x++) {
-            // 计算UV列索引
-            int uv_x = x / 2;
-            int uv_idx = uv_row_offset + uv_x;
-
-            // 获取YUV值
-            int y_val = y_row[x];
-            int u_val = u_plane[uv_idx];
-            int v_val = v_plane[uv_idx];
-
-            // YUV到RGB转换（快速整数算法）
-            int c = y_val - 16;
-            int d = u_val - 128;
-            int e = v_val - 128;
-
-            // 快速转换
-            int r = (YUV_R_COEFF * c + YUV_R_V_COEFF * e + YUV_BIAS) >> 8;
-            int g = (YUV_R_COEFF * c - YUV_G_COEFF1 * d - YUV_G_COEFF2 * e + YUV_BIAS) >> 8;
-            int b = (YUV_R_COEFF * c + YUV_B_COEFF * d + YUV_BIAS) >> 8;
-
-            // 钳位到0-255范围
-            r = (r < 0) ? 0 : ((r > 255) ? 255 : r);
-            g = (g < 0) ? 0 : ((g > 255) ? 255 : g);
-            b = (b < 0) ? 0 : ((b > 255) ? 255 : b);
-
-            // 转换为RGB565并存储
-            rgb_row[x] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-        }
-
-        // 填充右侧区域 (width 到 aligned_width-1) 为黑色
-        for (; x < aligned_width; x++) {
-            rgb_row[x] = 0x0000;  // RGB565黑色
-        }
-    }
-}
-
-bool SkiaRenderEngine::gpu_covert_rgb_565(YV12ToRGB565Converter::CovertInfo* info, unsigned char* yv12Buffer,
-                unsigned char* rgb565Buffer,
-                int width, int height, int stride) {
-    info->egl_work_queue.push_back(std::bind(YV12ToRGB565Converter::convert_to_rgb565,
-        info, yv12Buffer, rgb565Buffer, width, height, stride));
-	sem_post(&info->egl_go);
-	sem_wait(&info->egl_done);
-	return true;
-}
-
-bool SkiaRenderEngine::gpu_covert_rgb_565_by_fd(YV12ToRGB565Converter::CovertInfo* info, int yv12Fd, int rgbFd,
-                int width, int height, int stride) {
-    info->egl_work_queue.push_back(std::bind(YV12ToRGB565Converter::convert_to_rgb565_by_fd,
-        info, yv12Fd, rgbFd, width, height, stride));
-	sem_post(&info->egl_go);
-	sem_wait(&info->egl_done);
-	return true;
-}
 
 void SkiaRenderEngine::drawLayersInternal(
         const std::shared_ptr<std::promise<FenceResult>>&& resultPromise,
@@ -1062,56 +951,10 @@ void SkiaRenderEngine::drawLayersInternal(
 
         SkPaint paint;
         if (layer.source.buffer.buffer) {
-            sp<GraphicBuffer> dst_gb;
-            sp<GraphicBuffer> graphicBuffer = layer.source.buffer.buffer->getBuffer();
-            if (graphicBuffer->getPixelFormat() == HAL_PIXEL_FORMAT_YV12) {
-                if (graphicBuffer->needCovertFormat()) {
-                    void* data = nullptr;
-                    int result = graphicBuffer->lock(GRALLOC_USAGE_SW_READ_OFTEN, &data);
-                    if (result == 0 && data != nullptr) {
-                        unsigned char* yuv_data = (unsigned char*)data;
-                        int width = graphicBuffer->getWidth();
-                        int height = graphicBuffer->getHeight();
-
-                        dst_gb = new GraphicBuffer(
-                                width, height, HAL_PIXEL_FORMAT_RGB_565,
-                                GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER
-                                    | GRALLOC_USAGE_PRIVATE_0);
-
-                        void* dst_data = nullptr;
-                        int dst_result = dst_gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, &dst_data);
-                        if (dst_result == 0 && dst_data != nullptr) {
-                            unsigned char* rgb565 = (unsigned char*) dst_data;
-#if USE_GPU_COVERT
-                            int stride = graphicBuffer->getStride();
-                            const native_handle_t* dst_handle = dst_gb->getNativeBuffer()->handle;
-                            int rgbFd = dst_handle->data[0];
-                            const native_handle_t* src_handle = graphicBuffer->getNativeBuffer()->handle;
-                            int yv12Fd = src_handle->data[0];
-                            if (!gpu_covert_rgb_565_by_fd(&mCovertInfo, yv12Fd, rgbFd, width, height, stride)) {
-                                ALOGD("gpu_covert_rgb_565_by_fd failed");
-                                dst_gb->unlock();
-                                dst_gb = NULL;
-                            }
-#else
-                            yv12_to_rgb565(yuv_data, width, height, rgb565);
-#endif
-                        }
-                        if (dst_gb != NULL) {
-                            dst_gb->unlock();
-                        }
-                        graphicBuffer->unlock();
-                    }
-                }
-            }
             ATRACE_NAME("DrawImage");
             validateInputBufferUsage(layer.source.buffer.buffer->getBuffer());
             const auto& item = layer.source.buffer;
-            sp<GraphicBuffer> layer_gb = item.buffer->getBuffer();
-            if (dst_gb != NULL) {
-                layer_gb = dst_gb;
-            }
-            auto imageTextureRef = getOrCreateBackendTexture(layer_gb, false);
+            auto imageTextureRef = getOrCreateBackendTexture(item.buffer->getBuffer(), false);
 
             // if the layer's buffer has a fence, then we must must respect the fence prior to using
             // the buffer.
