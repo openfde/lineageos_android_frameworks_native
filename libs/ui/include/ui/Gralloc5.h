@@ -40,6 +40,8 @@ public:
 
     void freeBuffer(buffer_handle_t bufferHandle) const override;
 
+    int needConvertFormat(buffer_handle_t rawHandle) const override;
+
     [[nodiscard]] status_t validateBufferSize(buffer_handle_t bufferHandle, uint32_t width,
                                               uint32_t height, PixelFormat format,
                                               uint32_t layerCount, uint64_t usage,

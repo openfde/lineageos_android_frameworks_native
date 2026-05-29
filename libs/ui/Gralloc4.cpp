@@ -227,6 +227,11 @@ void Gralloc4Mapper::freeBuffer(buffer_handle_t bufferHandle) const {
     ALOGE_IF(error != Error::NONE, "freeBuffer(%p) failed with %d", buffer, error);
 }
 
+int Gralloc4Mapper::needConvertFormat(buffer_handle_t bufferHandle) const {
+    (void)bufferHandle;
+    return 0;
+}
+
 status_t Gralloc4Mapper::validateBufferSize(buffer_handle_t bufferHandle, uint32_t width,
                                             uint32_t height, PixelFormat format,
                                             uint32_t layerCount, uint64_t usage,
