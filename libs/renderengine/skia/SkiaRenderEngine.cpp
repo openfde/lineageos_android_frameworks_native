@@ -85,6 +85,7 @@
 #include "system/graphics-base-v1.0.h"
 #include <cutils/properties.h>
 
+#define ALIGN(value, base) (((value) + ((base)-1)) & ~((base)-1))
 namespace {
 
 // Debugging settings
@@ -396,6 +397,11 @@ void SkiaRenderEngine::mapExternalTextureBuffer(const sp<GraphicBuffer>& buffer,
     if (!isThreaded()) {
         return;
     }
+
+    if (buffer->getPixelFormat() == HAL_PIXEL_FORMAT_YV12
+            && buffer->needConvertFormat()) {
+        return ;
+    }
     // We don't attempt to map a buffer if the buffer contains protected content. In GL this is
     // important because GPU resources for protected buffers are much more limited. (In Vk we
     // simply match the existing behavior for protected buffers.)  We also never cache any
@@ -652,6 +658,55 @@ private:
     AutoBackendTexture::CleanupManager& mMgr;
 };
 
+void yv12_to_bgra(const unsigned char* yv12_data, int width, int height, int y_stride,
+                    unsigned char* rgb_output) {
+    int uv_stride = y_stride / 2;
+
+    size_t y_size = y_stride * height;
+    size_t uv_size = uv_stride * (height / 2);
+
+    const uint8_t* y_plane = yv12_data;
+    const uint8_t* v_plane = yv12_data + y_size;
+    const uint8_t* u_plane = v_plane + uv_size;
+
+    const int coef_rv = 359;   // 1.402 * 256
+    const int coef_gu = 88;    // 0.344 * 256
+    const int coef_gv = 183;   // 0.714 * 256
+    const int coef_bu = 454;   // 1.773 * 256
+
+    for (int y = 0; y < height; y++) {
+        const uint8_t* src_y = y_plane + y * y_stride;
+        uint8_t* dst = rgb_output + y * width * 4;
+
+        int uv_y = y / 2;
+        const uint8_t* src_v = v_plane + uv_y * uv_stride;
+        const uint8_t* src_u = u_plane + uv_y * uv_stride;
+
+        for (int x = 0; x < width; x++) {
+            int uv_x = x / 2;
+            int Y = src_y[x];
+            int V = src_v[uv_x];
+            int U = src_u[uv_x];
+
+            int C = Y;
+            int D = U - 128;
+            int E = V - 128;
+
+            int R = (C * 298 + coef_rv * E + 128) >> 8;
+            int G = (C * 298 - coef_gu * D - coef_gv * E + 128) >> 8;
+            int B = (C * 298 + coef_bu * D + 128) >> 8;
+
+            if (R < 0) R = 0; else if (R > 255) R = 255;
+            if (G < 0) G = 0; else if (G > 255) G = 255;
+            if (B < 0) B = 0; else if (B > 255) B = 255;
+
+            dst[4*x + 0] = (uint8_t)B;
+            dst[4*x + 1] = (uint8_t)G;
+            dst[4*x + 2] = (uint8_t)R;
+            dst[4*x + 3] = 0xFF;   // Alpha
+        }
+    }
+}
 void SkiaRenderEngine::drawLayersInternal(
         const std::shared_ptr<std::promise<FenceResult>>&& resultPromise,
         const DisplaySettings& display, const std::vector<LayerSettings>& layers,
@@ -951,10 +1006,50 @@ void SkiaRenderEngine::drawLayersInternal(
 
         SkPaint paint;
         if (layer.source.buffer.buffer) {
+            int srcWidth = 0;
+            int srcHeight = 0;
+            sp<GraphicBuffer> dst_gb;
+            sp<GraphicBuffer> graphicBuffer = layer.source.buffer.buffer->getBuffer();
+            if (graphicBuffer->getPixelFormat() == HAL_PIXEL_FORMAT_YV12) {
+                if (graphicBuffer->needConvertFormat()) {
+                    void* data = nullptr;
+                    int result = graphicBuffer->lock(GRALLOC_USAGE_SW_READ_OFTEN, &data);
+                    if (result == 0 && data != nullptr) {
+                        unsigned char* yuv_data = (unsigned char*)data;
+                        int width = graphicBuffer->getWidth();
+                        int height = graphicBuffer->getHeight();
+                        int stride = graphicBuffer->getStride();
+
+                        srcWidth = width;
+                        srcHeight = height;
+                        width = ALIGN(width, 64);
+
+                        dst_gb = new GraphicBuffer(
+                                width, height, HAL_PIXEL_FORMAT_BGRA_8888,
+                                GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER
+                                    | GRALLOC_USAGE_PRIVATE_0);
+
+                        void* dst_data = nullptr;
+                        int dst_result = dst_gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, &dst_data);
+                        if (dst_result == 0 && dst_data != nullptr) {
+                            unsigned char* bgra = (unsigned char*) dst_data;
+                            yv12_to_bgra(yuv_data, width, height, stride, bgra);
+                        }
+                        if (dst_gb != NULL) {
+                            dst_gb->unlock();
+                        }
+                        graphicBuffer->unlock();
+                    }
+                }
+            }
             ATRACE_NAME("DrawImage");
             validateInputBufferUsage(layer.source.buffer.buffer->getBuffer());
             const auto& item = layer.source.buffer;
-            auto imageTextureRef = getOrCreateBackendTexture(item.buffer->getBuffer(), false);
+            sp<GraphicBuffer> layer_gb = item.buffer->getBuffer();
+            if (dst_gb != NULL) {
+                layer_gb = dst_gb;
+            }
+            auto imageTextureRef = getOrCreateBackendTexture(layer_gb, false);
 
             // if the layer's buffer has a fence, then we must must respect the fence prior to using
             // the buffer.
@@ -990,7 +1085,12 @@ void SkiaRenderEngine::drawLayersInternal(
             // building the total matrix with the textureTransform we need to first
             // normalize it, then apply the textureTransform, then scale back up.
             texMatrix.preScale(1.0f / bounds.width(), 1.0f / bounds.height());
-            texMatrix.postScale(image->width(), image->height());
+            if (layer_gb->getUsage() & GRALLOC_USAGE_PRIVATE_0) {
+                texMatrix.postScale(srcWidth, srcHeight);
+            } else {
+                texMatrix.postScale(image->width(), image->height());
+            }
+
 
             SkMatrix matrix;
             if (!texMatrix.invert(&matrix)) {

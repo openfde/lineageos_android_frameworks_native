@@ -139,6 +139,13 @@ status_t GraphicBufferMapper::freeBuffer(buffer_handle_t handle)
     return NO_ERROR;
 }
 
+int GraphicBufferMapper::needConvertFormat(buffer_handle_t handle)
+{
+    ATRACE_CALL();
+
+    return mMapper->needConvertFormat(handle);
+}
+
 ui::Result<LockResult> GraphicBufferMapper::lock(buffer_handle_t handle, int64_t usage,
                                                  const Rect& bounds, unique_fd&& acquireFence) {
     ATRACE_CALL();

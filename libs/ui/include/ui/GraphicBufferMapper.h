@@ -71,6 +71,8 @@ public:
 
     status_t freeBuffer(buffer_handle_t handle);
 
+    int needConvertFormat(buffer_handle_t handle);
+
     void getTransportSize(buffer_handle_t handle,
             uint32_t* outTransportNumFds, uint32_t* outTransportNumInts);
 
