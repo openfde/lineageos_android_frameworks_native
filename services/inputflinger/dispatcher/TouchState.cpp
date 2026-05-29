@@ -26,6 +26,9 @@ using android::base::StringPrintf;
 using android::gui::WindowInfo;
 using android::gui::WindowInfoHandle;
 
+static const bool mEnableHoverDebug = true;
+
+
 namespace android::inputdispatcher {
 
 void TouchState::reset() {
@@ -58,6 +61,8 @@ void TouchState::removeTouchingPointerFromWindow(
 }
 
 void TouchState::clearHoveringPointers(DeviceId deviceId) {
+    if(mEnableHoverDebug) ALOGW("[HOVER_CLEAR] Clearing all hovering pointers for device=%d", deviceId);
+
     for (TouchedWindow& touchedWindow : windows) {
         touchedWindow.removeAllHoveringPointersForDevice(deviceId);
     }
@@ -65,9 +70,12 @@ void TouchState::clearHoveringPointers(DeviceId deviceId) {
 }
 
 void TouchState::clearWindowsWithoutPointers() {
+    if(mEnableHoverDebug) ALOGW("[HOVER_CLEAN] Before clean: windows count = %zu", windows.size());
+
     std::erase_if(windows, [](const TouchedWindow& w) {
         return !w.hasTouchingPointers() && !w.hasHoveringPointers();
     });
+    if(mEnableHoverDebug) ALOGW("[HOVER_CLEAN] After clean: windows count = %zu", windows.size());
 }
 
 void TouchState::addOrUpdateWindow(const sp<WindowInfoHandle>& windowHandle,
@@ -111,6 +119,8 @@ void TouchState::addOrUpdateWindow(const sp<WindowInfoHandle>& windowHandle,
 
 void TouchState::addHoveringPointerToWindow(const sp<WindowInfoHandle>& windowHandle,
                                             DeviceId deviceId, const PointerProperties& pointer) {
+    if(mEnableHoverDebug) ALOGW("[HOVER_ADD] device=%d pointer=%d → window=%s",
+          deviceId, pointer.id, windowHandle->getName().c_str());
     for (TouchedWindow& touchedWindow : windows) {
         if (touchedWindow.windowHandle == windowHandle) {
             touchedWindow.addHoveringPointer(deviceId, pointer);
@@ -251,14 +261,28 @@ std::set<sp<WindowInfoHandle>> TouchState::getWindowsWithHoveringPointer(DeviceI
 }
 
 void TouchState::removeHoveringPointer(int32_t hoveringDeviceId, int32_t hoveringPointerId) {
+    if(mEnableHoverDebug) ALOGW("[HOVER_REMOVE] TouchState::removeHoveringPointer device=%d pointer=%d",
+              hoveringDeviceId, hoveringPointerId);
+
     for (TouchedWindow& window : windows) {
+        if (mEnableHoverDebug) {
+            if(window.hasHoveringPointer(hoveringDeviceId, hoveringPointerId)){
+                ALOGW("[HOVER_REMOVE]   → Found in window: %s",
+                  window.windowHandle->getName().c_str());
+            }
+        }
         window.removeHoveringPointer(hoveringDeviceId, hoveringPointerId);
     }
     clearWindowsWithoutPointers();
 }
 
 void TouchState::removeAllPointersForDevice(DeviceId deviceId) {
+    if(mEnableHoverDebug) ALOGW("[HOVER_CLEAR_ALL] TouchState::removeAllPointersForDevice device=%d (clearing ALL pointers)",
+              deviceId);
+
     for (TouchedWindow& window : windows) {
+        if(mEnableHoverDebug) ALOGW("[HOVER_CLEAR_ALL]   → Clearing window: %s",
+              window.windowHandle->getName().c_str());
         window.removeAllHoveringPointersForDevice(deviceId);
         window.removeAllTouchingPointersForDevice(deviceId);
     }

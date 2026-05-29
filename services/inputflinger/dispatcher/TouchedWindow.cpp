@@ -22,6 +22,8 @@
 
 using android::base::StringPrintf;
 
+static const bool mEnableHoverDebug = true;
+
 namespace android {
 
 namespace inputdispatcher {
@@ -78,6 +80,9 @@ bool TouchedWindow::hasHoveringPointer(DeviceId deviceId, int32_t pointerId) con
 }
 
 void TouchedWindow::addHoveringPointer(DeviceId deviceId, const PointerProperties& pointer) {
+    if (mEnableHoverDebug) ALOGW("[HOVER_ADD] device=%d pointer=%d → window=%s",
+              deviceId, pointer.id, windowHandle ? windowHandle->getName().c_str() : "null");
+
     std::vector<PointerProperties>& hoveringPointers = mDeviceStates[deviceId].hoveringPointers;
     const size_t initialSize = hoveringPointers.size();
     std::erase_if(hoveringPointers, [&pointer](const PointerProperties& properties) {
@@ -260,8 +265,12 @@ void TouchedWindow::removeAllTouchingPointersForDevice(DeviceId deviceId) {
 }
 
 void TouchedWindow::removeHoveringPointer(DeviceId deviceId, int32_t pointerId) {
+    if (mEnableHoverDebug) ALOGW("[HOVER_REMOVE] device=%d pointer=%d from window=%s",
+          deviceId, pointerId, windowHandle ? windowHandle->getName().c_str() : "null");
+
     const auto stateIt = mDeviceStates.find(deviceId);
     if (stateIt == mDeviceStates.end()) {
+        if (mEnableHoverDebug) ALOGW("[HOVER_REMOVE] device=%d pointer=%d → state not found", deviceId, pointerId);
         return;
     }
     DeviceState& state = stateIt->second;
@@ -276,6 +285,9 @@ void TouchedWindow::removeHoveringPointer(DeviceId deviceId, int32_t pointerId) 
 }
 
 void TouchedWindow::removeAllHoveringPointersForDevice(DeviceId deviceId) {
+    if (mEnableHoverDebug)ALOGW("[HOVER_CLEAR_ALL] device=%d from window=%s",
+              deviceId, windowHandle ? windowHandle->getName().c_str() : "null");
+
     const auto stateIt = mDeviceStates.find(deviceId);
     if (stateIt == mDeviceStates.end()) {
         return;

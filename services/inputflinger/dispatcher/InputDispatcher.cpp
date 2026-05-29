@@ -55,6 +55,7 @@
 #include "trace/InputTracer.h"
 #include "trace/InputTracingPerfettoBackend.h"
 #include "trace/ThreadedBackend.h"
+//#include <utils/CallStack.h>
 
 #define INDENT "  "
 #define INDENT2 "    "
@@ -73,6 +74,9 @@ using android::gui::WindowInfo;
 using android::gui::WindowInfoHandle;
 using android::os::InputEventInjectionResult;
 using android::os::InputEventInjectionSync;
+
+static const bool mEnableHoverDebug = true;
+
 namespace input_flags = com::android::input::flags;
 
 namespace android::inputdispatcher {
@@ -666,18 +670,36 @@ std::vector<TouchedWindow> getHoveringWindowsLocked(const TouchState* oldState,
 
     // We should consider all hovering pointers here. But for now, just use the first one
     const PointerProperties& pointer = entry.pointerProperties[0];
+    if(mEnableHoverDebug) ALOGW("[HOVER_DEBUG] === START === device=%d, pointerId=%d, action=%s, oldState=%p",
+          entry.deviceId, pointer.id, MotionEvent::actionToString(entry.action).c_str(), oldState);
 
     std::set<sp<WindowInfoHandle>> oldWindows;
     if (oldState != nullptr) {
         oldWindows = oldState->getWindowsWithHoveringPointer(entry.deviceId, pointer.id);
+        if(mEnableHoverDebug){
+            ALOGW("[HOVER_DEBUG] OLD windows count = %zu", oldWindows.size());
+            for (const auto& w : oldWindows) {
+                ALOGW("[HOVER_DEBUG]   OLD window: %s", w->getName().c_str());
+            }
+        }
+    }else{
+        if(mEnableHoverDebug) ALOGW("[HOVER_DEBUG] OLD state is null");
     }
 
     std::set<sp<WindowInfoHandle>> newWindows =
             newTouchState.getWindowsWithHoveringPointer(entry.deviceId, pointer.id);
+    if(mEnableHoverDebug){
+        ALOGW("[HOVER_DEBUG] NEW windows count = %zu", newWindows.size());
+        for (const auto& w : newWindows) {
+            ALOGW("[HOVER_DEBUG]   NEW window: %s", w->getName().c_str());
+        }
+    }
 
     // If the pointer is no longer in the new window set, send HOVER_EXIT.
     for (const sp<WindowInfoHandle>& oldWindow : oldWindows) {
         if (newWindows.find(oldWindow) == newWindows.end()) {
+            if(mEnableHoverDebug) ALOGW("[HOVER_EXIT] device=%d pointer=%d → window=%s",
+                  entry.deviceId, pointer.id, oldWindow->getName().c_str());
             TouchedWindow touchedWindow;
             touchedWindow.windowHandle = oldWindow;
             touchedWindow.dispatchMode = InputTarget::DispatchMode::HOVER_EXIT;
@@ -691,10 +713,14 @@ std::vector<TouchedWindow> getHoveringWindowsLocked(const TouchState* oldState,
         if (oldWindows.find(newWindow) == oldWindows.end()) {
             // Any windows that have this pointer now, and didn't have it before, should get
             // HOVER_ENTER
+            if(mEnableHoverDebug) ALOGW("[HOVER_ENTER] device=%d pointer=%d → window=%s",
+                  entry.deviceId, pointer.id, newWindow->getName().c_str());
             touchedWindow.dispatchMode = InputTarget::DispatchMode::HOVER_ENTER;
         } else {
             // This pointer was already sent to the window. Use ACTION_HOVER_MOVE.
             if (CC_UNLIKELY(maskedAction != AMOTION_EVENT_ACTION_HOVER_MOVE)) {
+                if(mEnableHoverDebug) ALOGW("[HOVER_MOVE] Unexpected action: %s",
+                      MotionEvent::actionToString(entry.action).c_str());
                 android::base::LogSeverity severity = android::base::LogSeverity::FATAL;
                 if (!input_flags::a11y_crash_on_inconsistent_event_stream() &&
                     entry.flags & AMOTION_EVENT_FLAG_IS_ACCESSIBILITY_EVENT) {
@@ -713,6 +739,7 @@ std::vector<TouchedWindow> getHoveringWindowsLocked(const TouchState* oldState,
         }
         out.push_back(touchedWindow);
     }
+    if(mEnableHoverDebug) ALOGW("[HOVER_DEBUG] === END === Generated %zu hover events", out.size());
     return out;
 }
 
@@ -4535,7 +4562,7 @@ void InputDispatcher::notifyMotion(const NotifyMotionArgs& args) {
                                            args.getPointerCount(), args.pointerProperties.data(),
                                            args.pointerCoords.data(), args.flags);
         if (!result.ok()) {
-            LOG(FATAL) << "Bad stream: " << result.error() << " caused by " << args.dump();
+            LOG(FATAL) << "[FDE_DEBUG] InputDispatcher::notifyMotion Bad stream: " << result.error() << " caused by " << args.dump();
         }
     }
 
