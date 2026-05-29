@@ -132,6 +132,7 @@ cc_library_static {
     ],
     include_dirs: [
         "external/skia/src/gpu",
+        "frameworks/native/libs/nativewindow/include-private/private",
     ],
     lto: {
         thin: true,
