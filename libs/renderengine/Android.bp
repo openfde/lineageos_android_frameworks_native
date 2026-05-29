@@ -84,7 +84,6 @@ filegroup {
         "skia/Cache.cpp",
         "skia/ColorSpaces.cpp",
         "skia/GLExtensions.cpp",
-        "skia/YV12ToRGB565Converter.cpp",
         "skia/SkiaRenderEngine.cpp",
         "skia/SkiaGLRenderEngine.cpp",
         "skia/SkiaVkRenderEngine.cpp",
@@ -133,7 +132,6 @@ cc_library_static {
     ],
     include_dirs: [
         "external/skia/src/gpu",
-        "frameworks/native/libs/nativewindow/include-private/private",
     ],
     lto: {
         thin: true,

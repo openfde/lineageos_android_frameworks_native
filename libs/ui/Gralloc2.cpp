@@ -194,23 +194,6 @@ void Gralloc2Mapper::freeBuffer(buffer_handle_t bufferHandle) const {
             buffer, error);
 }
 
-int Gralloc2Mapper::needCovertFormat(buffer_handle_t bufferHandle) const {
-    Error error;
-    int result = 0;
-    auto buffer = const_cast<native_handle_t*>(bufferHandle);
-    auto ret = mMapper->needCovertFormat(buffer,
-            [&](const auto& tmpError, const auto& tmpBuffer)
-            {
-                error = tmpError;
-                if (error != Error::NONE) {
-                    return 0;
-                }
-                result = tmpBuffer;
-                return 0;
-            });
-    return (ret.isOk() ? result : 0);
-}
-
 status_t Gralloc2Mapper::validateBufferSize(buffer_handle_t bufferHandle, uint32_t width,
                                             uint32_t height, android::PixelFormat format,
                                             uint32_t layerCount, uint64_t usage,

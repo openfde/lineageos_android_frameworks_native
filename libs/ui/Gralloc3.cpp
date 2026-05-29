@@ -167,11 +167,6 @@ void Gralloc3Mapper::freeBuffer(buffer_handle_t bufferHandle) const {
     ALOGE_IF(error != Error::NONE, "freeBuffer(%p) failed with %d", buffer, error);
 }
 
-int Gralloc3Mapper::needCovertFormat(buffer_handle_t bufferHandle) const {
-    (void)bufferHandle;
-    return 0;
-}
-
 status_t Gralloc3Mapper::validateBufferSize(buffer_handle_t bufferHandle, uint32_t width,
                                             uint32_t height, android::PixelFormat format,
                                             uint32_t layerCount, uint64_t usage,
