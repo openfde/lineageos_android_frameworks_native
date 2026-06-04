@@ -104,6 +104,8 @@ public:
     SurfaceTexture(const sp<IGraphicBufferConsumer>& bq, uint32_t textureTarget, bool useFenceSync,
                    bool isControlledByApp);
 
+    void setPackageName(const String8& name);
+
     /**
      * updateTexImage acquires the most recently queued buffer, and sets the
      * image contents of the target texture to it.
@@ -364,6 +366,8 @@ protected:
      * consume buffers as hardware textures.
      */
     static const uint64_t DEFAULT_USAGE_FLAGS = GraphicBuffer::USAGE_HW_TEXTURE;
+
+    String8 mPackageName;
 
     /**
      * mCurrentCrop is the crop rectangle that applies to the current texture.

@@ -171,7 +171,7 @@ protected:
          * createIfNeeded creates an EGLImage if required (we haven't created
          * one yet, or the EGLDisplay or crop-rect has changed).
          */
-        status_t createIfNeeded(EGLDisplay display, bool forceCreate = false);
+        status_t createIfNeeded(EGLDisplay display, int video_width = 0, bool forceCreate = false);
 
         /**
          * This calls glEGLImageTargetTexture2DOES to bind the image to the
@@ -304,6 +304,9 @@ protected:
      */
     static sp<GraphicBuffer> sReleasedTexImageBuffer;
     sp<EglImage> mReleasedTexImage;
+
+    bool mIsMesa;
+    bool mNeedConvert;
 };
 
 } // namespace android
