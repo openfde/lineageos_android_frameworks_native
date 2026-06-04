@@ -85,6 +85,15 @@ SurfaceTexture::SurfaceTexture(const sp<IGraphicBufferConsumer>& bq, uint32_t te
     mConsumer->setConsumerUsageBits(DEFAULT_USAGE_FLAGS);
 }
 
+void SurfaceTexture::setPackageName(const String8& name) {
+    Mutex::Autolock _l(mMutex);
+    if (mAbandoned) {
+        SFT_LOGE("setPackageName: SurfaceTexture is abandoned!");
+        return;
+    }
+    mPackageName = name;
+}
+
 status_t SurfaceTexture::setDefaultBufferSize(uint32_t w, uint32_t h) {
     Mutex::Autolock lock(mMutex);
     if (mAbandoned) {

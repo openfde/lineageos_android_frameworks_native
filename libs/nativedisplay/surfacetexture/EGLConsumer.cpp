@@ -31,6 +31,7 @@
 #include <utils/Log.h>
 #include <utils/String8.h>
 #include <utils/Trace.h>
+#include <cutils/properties.h>
 
 #define PROT_CONTENT_EXT_STR "EGL_EXT_protected_content"
 #define EGL_PROTECTED_CONTENT_EXT 0x32C0
@@ -83,7 +84,14 @@ static bool hasEglProtectedContent() {
     return hasIt;
 }
 
-EGLConsumer::EGLConsumer() : mEglDisplay(EGL_NO_DISPLAY), mEglContext(EGL_NO_CONTEXT) {}
+EGLConsumer::EGLConsumer() : mEglDisplay(EGL_NO_DISPLAY), mEglContext(EGL_NO_CONTEXT) {
+    mIsMesa = false;
+    char prop_egl_type[PROPERTY_VALUE_MAX];
+    property_get("ro.hardware.egl", prop_egl_type, "none");
+    if (strcmp(prop_egl_type, "mesa") == 0) {
+        mIsMesa = true;
+    }
+}
 
 status_t EGLConsumer::updateTexImage(SurfaceTexture& st) {
     // Make sure the EGL state is the same as in previous calls.
@@ -245,12 +253,26 @@ status_t EGLConsumer::updateAndReleaseLocked(const BufferItem& item, PendingRele
         return err;
     }
 
+    if (mIsMesa) {
+        if (st.mSlots[slot].mGraphicBuffer->getPixelFormat() == HAL_PIXEL_FORMAT_YV12) {
+            if (strcmp(st.mPackageName.c_str(), "tv.danmaku.bili") == 0) {
+                mNeedConvert = true;
+            } else {
+                mNeedConvert = false;
+            }
+        }
+    }
+
     // Ensure we have a valid EglImageKHR for the slot, creating an EglImage
     // if nessessary, for the gralloc buffer currently in the slot in
     // ConsumerBase.
     // We may have to do this even when item.mGraphicBuffer == NULL (which
     // means the buffer was previously acquired).
-    err = mEglSlots[slot].mEglImage->createIfNeeded(mEglDisplay);
+    if (mNeedConvert) {
+        err = mEglSlots[slot].mEglImage->createIfNeeded(mEglDisplay, item.mCrop.width(), true);
+    } else {
+        err = mEglSlots[slot].mEglImage->createIfNeeded(mEglDisplay);
+    }
     if (err != NO_ERROR) {
         EGC_LOGW("updateAndRelease: unable to createImage on display=%p slot=%d", mEglDisplay,
                  slot);
@@ -604,6 +626,57 @@ void EGLConsumer::onAbandonLocked() {
     mCurrentTextureImage.clear();
 }
 
+#define ALIGN(value, base) (((value) + ((base)-1)) & ~((base)-1))
+void yv12_to_bgra(const unsigned char* yv12_data, int width, int height, int y_stride,
+                    unsigned char* rgb_output) {
+    int uv_stride = y_stride / 2;
+
+    size_t y_size = y_stride * height;
+    size_t uv_size = uv_stride * (height / 2);
+
+    const uint8_t* y_plane = yv12_data;
+    const uint8_t* v_plane = yv12_data + y_size;
+    const uint8_t* u_plane = v_plane + uv_size;
+
+    const int coef_rv = 359;   // 1.402 * 256
+    const int coef_gu = 88;    // 0.344 * 256
+    const int coef_gv = 183;   // 0.714 * 256
+    const int coef_bu = 454;   // 1.773 * 256
+
+    for (int y = 0; y < height; y++) {
+        const uint8_t* src_y = y_plane + y * y_stride;
+        uint8_t* dst = rgb_output + y * width * 4;
+
+        int uv_y = y / 2;
+        const uint8_t* src_v = v_plane + uv_y * uv_stride;
+        const uint8_t* src_u = u_plane + uv_y * uv_stride;
+
+        for (int x = 0; x < width; x++) {
+            int uv_x = x / 2;
+            int Y = src_y[x];
+            int V = src_v[uv_x];
+            int U = src_u[uv_x];
+
+            int C = Y;
+            int D = U - 128;
+            int E = V - 128;
+
+            int R = (C * 298 + coef_rv * E + 128) >> 8;
+            int G = (C * 298 - coef_gu * D - coef_gv * E + 128) >> 8;
+            int B = (C * 298 + coef_bu * D + 128) >> 8;
+
+            if (R < 0) R = 0; else if (R > 255) R = 255;
+            if (G < 0) G = 0; else if (G > 255) G = 255;
+            if (B < 0) B = 0; else if (B > 255) B = 255;
+
+            dst[4*x + 0] = (uint8_t)B;
+            dst[4*x + 1] = (uint8_t)G;
+            dst[4*x + 2] = (uint8_t)R;
+            dst[4*x + 3] = 0xFF;   // Alpha
+        }
+    }
+}
+
 EGLConsumer::EglImage::EglImage(sp<GraphicBuffer> graphicBuffer)
       : mGraphicBuffer(graphicBuffer), mEglImage(EGL_NO_IMAGE_KHR), mEglDisplay(EGL_NO_DISPLAY) {}
 
@@ -616,7 +689,7 @@ EGLConsumer::EglImage::~EglImage() {
     }
 }
 
-status_t EGLConsumer::EglImage::createIfNeeded(EGLDisplay eglDisplay, bool forceCreation) {
+status_t EGLConsumer::EglImage::createIfNeeded(EGLDisplay eglDisplay, int video_width, bool forceCreation) {
     // If there's an image and it's no longer valid, destroy it.
     bool haveImage = mEglImage != EGL_NO_IMAGE_KHR;
     bool displayInvalid = mEglDisplay != eglDisplay;
@@ -632,7 +705,48 @@ status_t EGLConsumer::EglImage::createIfNeeded(EGLDisplay eglDisplay, bool force
     // If there's no image, create one.
     if (mEglImage == EGL_NO_IMAGE_KHR) {
         mEglDisplay = eglDisplay;
-        mEglImage = createImage(mEglDisplay, mGraphicBuffer);
+        sp<GraphicBuffer> dst_gb;
+        if (video_width > 0) {
+            sp<GraphicBuffer> graphicBuffer = mGraphicBuffer;
+            if (graphicBuffer->getPixelFormat() == HAL_PIXEL_FORMAT_YV12) {
+                if (graphicBuffer->needConvertFormat()) {
+                    void* data = nullptr;
+                    int result = graphicBuffer->lock(GRALLOC_USAGE_SW_READ_OFTEN, &data);
+                    if (result == 0 && data != nullptr) {
+                        unsigned char* yuv_data = (unsigned char*)data;
+                        int width = graphicBuffer->getWidth();
+                        int height = graphicBuffer->getHeight();
+                        int stride = graphicBuffer->getStride();
+
+                        if (video_width > 0)
+                            width = video_width;
+                        width = ALIGN(width, 64);
+
+                        dst_gb = new GraphicBuffer(
+                                    width, height, HAL_PIXEL_FORMAT_BGRA_8888,
+                                    GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER
+                                        | GRALLOC_USAGE_PRIVATE_0);
+
+                        void* dst_data = nullptr;
+                        int dst_result = dst_gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, &dst_data);
+                        if (dst_result == 0 && dst_data != nullptr) {
+                            unsigned char* bgra_data = (unsigned char*) dst_data;
+                            yv12_to_bgra(yuv_data, width, height, stride, bgra_data);
+                        }
+                        if (dst_gb != NULL) {
+                            dst_gb->unlock();
+                        }
+                        graphicBuffer->unlock();
+                    }
+                }
+            }
+        }
+
+        if (dst_gb != NULL) {
+            mEglImage = createImage(mEglDisplay, dst_gb);
+        } else {
+            mEglImage = createImage(mEglDisplay, mGraphicBuffer);
+        }
     }
 
     // Fail if we can't create a valid image.
