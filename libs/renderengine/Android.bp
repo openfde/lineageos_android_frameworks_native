@@ -44,6 +44,7 @@ cc_defaults {
         "libui",
         "libutils",
         "libvulkan",
+        "libgpu-converter",
     ],
 
     static_libs: [
@@ -53,6 +54,10 @@ cc_defaults {
     ],
     local_include_dirs: ["include"],
     export_include_dirs: ["include"],
+
+    include_dirs: [
+        "frameworks/native/libs/gpu-converter/include",
+    ],
 }
 
 // Needed by FlagManager to access a #define.
