@@ -4540,7 +4540,7 @@ void InputDispatcher::notifyMotion(const NotifyMotionArgs& args) {
                                            args.pointerCoords.data(), args.flags);
         if (!result.ok()) {
             if (MotionEvent::getActionMasked(args.action) == AMOTION_EVENT_ACTION_HOVER_EXIT) {
-               ALOGW("[FDE_DEBUG] Ignoring inconsistent HOVER_EXIT (device %d): %s",
+               ALOGW("[FDE_DEBUG] InputDispatcher::notifyMotion Ignoring inconsistent HOVER_EXIT (device %d): %s",
                      args.deviceId, result.error().message().c_str());
                return;
             }
