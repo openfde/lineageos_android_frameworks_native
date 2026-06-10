@@ -110,17 +110,18 @@ void TouchState::addOrUpdateWindow(const sp<WindowInfoHandle>& windowHandle,
 }
 
 void TouchState::addHoveringPointerToWindow(const sp<WindowInfoHandle>& windowHandle,
-                                            DeviceId deviceId, const PointerProperties& pointer) {
+                                            DeviceId deviceId, const PointerProperties& pointer,
+                                            float x, float y) {
     for (TouchedWindow& touchedWindow : windows) {
         if (touchedWindow.windowHandle == windowHandle) {
-            touchedWindow.addHoveringPointer(deviceId, pointer);
+            touchedWindow.addHoveringPointer(deviceId, pointer, x, y);
             return;
         }
     }
 
     TouchedWindow touchedWindow;
     touchedWindow.windowHandle = windowHandle;
-    touchedWindow.addHoveringPointer(deviceId, pointer);
+    touchedWindow.addHoveringPointer(deviceId, pointer, x, y);
     windows.push_back(touchedWindow);
 }
 

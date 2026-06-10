@@ -707,7 +707,8 @@ std::vector<TouchedWindow> getHoveringWindowsLocked(const TouchState* oldState,
             }
             touchedWindow.dispatchMode = InputTarget::DispatchMode::AS_IS;
         }
-        touchedWindow.addHoveringPointer(entry.deviceId, pointer);
+        const auto [x, y] = resolveTouchedPosition(entry);
+        touchedWindow.addHoveringPointer(entry.deviceId, pointer, x, y);
         if (canReceiveForegroundTouches(*newWindow->getInfo())) {
             touchedWindow.targetFlags |= InputTarget::Flags::FOREGROUND;
         }
@@ -834,6 +835,8 @@ std::pair<bool /*cancelPointers*/, bool /*cancelNonPointers*/> expandCancellatio
             return {false, true};
         case CancelationOptions::Mode::CANCEL_FALLBACK_EVENTS:
             return {false, true};
+        case CancelationOptions::Mode::CANCEL_HOVER_EVENTS:
+            return {true, false};
     }
 }
 
@@ -2451,7 +2454,8 @@ std::vector<InputTarget> InputDispatcher::findTouchedWindowTargetsLocked(
 
             if (isHoverAction) {
                 // The "windowHandle" is the target of this hovering pointer.
-                tempTouchState.addHoveringPointerToWindow(windowHandle, entry.deviceId, pointer);
+                tempTouchState.addHoveringPointerToWindow(windowHandle, entry.deviceId, pointer, x,
+                                                          y);
             }
 
             // Set target flags.
@@ -5339,6 +5343,31 @@ void InputDispatcher::setInputWindowsLocked(
             ALOGI("Drag window went away: %s", mDragState->dragWindow->getName().c_str());
             sendDropWindowCommandLocked(nullptr, 0, 0);
             mDragState.reset();
+        }
+    }
+
+    // Check if the hovering should stop because the window is no longer eligible to receive it
+    // (for example, if the touchable region changed)
+    if (const auto& it = mTouchStatesByDisplay.find(displayId); it != mTouchStatesByDisplay.end()) {
+        TouchState& state = it->second;
+        for (TouchedWindow& touchedWindow : state.windows) {
+            std::vector<DeviceId> erasedDevices = touchedWindow.eraseHoveringPointersIf(
+                    [this, displayId, &touchedWindow](const PointerProperties& properties, float x,
+                                                      float y) REQUIRES(mLock) {
+                        const bool isStylus = properties.toolType == ToolType::STYLUS;
+                        const ui::Transform displayTransform = getTransformLocked(displayId);
+                        const bool stillAcceptsTouch =
+                                windowAcceptsTouchAt(*touchedWindow.windowHandle->getInfo(),
+                                                     displayId, x, y, isStylus, displayTransform);
+                        return !stillAcceptsTouch;
+                    });
+
+            for (DeviceId deviceId : erasedDevices) {
+                CancelationOptions options(CancelationOptions::Mode::CANCEL_HOVER_EVENTS,
+                                           "WindowInfo changed");
+                options.deviceId = deviceId;
+                synthesizeCancelationEventsForWindowLocked(touchedWindow.windowHandle, options);
+            }
         }
     }
 
