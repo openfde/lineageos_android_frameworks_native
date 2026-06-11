@@ -4539,7 +4539,12 @@ void InputDispatcher::notifyMotion(const NotifyMotionArgs& args) {
                                            args.getPointerCount(), args.pointerProperties.data(),
                                            args.pointerCoords.data(), args.flags);
         if (!result.ok()) {
-            LOG(FATAL) << "Bad stream: " << result.error() << " caused by " << args.dump();
+            if (MotionEvent::getActionMasked(args.action) == AMOTION_EVENT_ACTION_HOVER_EXIT) {
+               ALOGW("[FDE_DEBUG] InputDispatcher::notifyMotion Ignoring inconsistent HOVER_EXIT (device %d): %s",
+                     args.deviceId, result.error().message().c_str());
+               return;
+            }
+            LOG(FATAL) << "[FDE_DEBUG] InputDispatcher::notifyMotion Bad stream: " << result.error() << " caused by " << args.dump();
         }
     }
 

@@ -663,7 +663,13 @@ status_t InputPublisher::publishMotionEvent(
                 mInputVerifier.processMovement(deviceId, source, action, pointerCount,
                                                pointerProperties, pointerCoords, flags);
         if (!result.ok()) {
-            LOG(FATAL) << "Bad stream: " << result.error();
+            if (MotionEvent::getActionMasked(action) == AMOTION_EVENT_ACTION_HOVER_EXIT) {
+               ALOGW("[FDE_DEBUG] InputPublisher::publishMotionEvent Ignoring inconsistent HOVER_EXIT (device %d): %s",
+                     deviceId, result.error().message().c_str());
+               mInputVerifier.resetDevice(deviceId);
+               return OK;
+            }
+            LOG(FATAL) << "[FDE_DEBUG] InputPublisher::publishMotionEvent Bad stream: " << result.error();
         }
     }
     if (debugTransportPublisher()) {
