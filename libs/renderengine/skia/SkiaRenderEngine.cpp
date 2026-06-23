@@ -1026,8 +1026,7 @@ void SkiaRenderEngine::drawLayersInternal(
 
                         dst_gb = new GraphicBuffer(
                                 width, height, HAL_PIXEL_FORMAT_BGRA_8888,
-                                GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER
-                                    | GRALLOC_USAGE_PRIVATE_0);
+                                GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER);
 
                         void* dst_data = nullptr;
                         int dst_result = dst_gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, &dst_data);
@@ -1085,7 +1084,7 @@ void SkiaRenderEngine::drawLayersInternal(
             // building the total matrix with the textureTransform we need to first
             // normalize it, then apply the textureTransform, then scale back up.
             texMatrix.preScale(1.0f / bounds.width(), 1.0f / bounds.height());
-            if (layer_gb->getUsage() & GRALLOC_USAGE_PRIVATE_0) {
+            if (srcWidth > 0 && srcHeight > 0) {
                 texMatrix.postScale(srcWidth, srcHeight);
             } else {
                 texMatrix.postScale(image->width(), image->height());
