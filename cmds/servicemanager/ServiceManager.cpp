@@ -356,6 +356,9 @@ Status ServiceManager::checkService(const std::string& name, sp<IBinder>* outBin
 
 sp<IBinder> ServiceManager::tryGetService(const std::string& name, bool startIfNotFound) {
     auto ctx = mAccess->getCallingContext();
+    if ((multiuser_get_app_id(ctx.uid) >= AID_APP) && name.compare(0, 7, "openfde") == 0 ) {
+        return nullptr;
+    }
 
     sp<IBinder> out;
     Service* service = nullptr;
@@ -519,6 +522,12 @@ Status ServiceManager::listServices(int32_t dumpPriority, std::vector<std::strin
         if (service.dumpPriority & dumpPriority) {
             outList->push_back(name);
         }
+    }
+    auto ctx = mAccess->getCallingContext();
+    if (ctx.uid > AID_APP) {
+        outList->erase(std::remove_if(outList->begin(), outList->end(), [](const std::string& s) {
+            return s.compare(0, 7, "openfde") == 0;
+        }), outList->end());
     }
 
     return Status::ok();
