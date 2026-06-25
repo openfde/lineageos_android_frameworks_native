@@ -709,7 +709,8 @@ status_t EGLConsumer::EglImage::createIfNeeded(EGLDisplay eglDisplay, int video_
         if (video_width > 0) {
             sp<GraphicBuffer> graphicBuffer = mGraphicBuffer;
             if (graphicBuffer->getPixelFormat() == HAL_PIXEL_FORMAT_YV12) {
-                if (graphicBuffer->needConvertFormat()) {
+                // if (graphicBuffer->needConvertFormat())
+                {
                     void* data = nullptr;
                     int result = graphicBuffer->lock(GRALLOC_USAGE_SW_READ_OFTEN, &data);
                     if (result == 0 && data != nullptr) {
@@ -724,8 +725,7 @@ status_t EGLConsumer::EglImage::createIfNeeded(EGLDisplay eglDisplay, int video_
 
                         dst_gb = new GraphicBuffer(
                                     width, height, HAL_PIXEL_FORMAT_BGRA_8888,
-                                    GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER
-                                        | GRALLOC_USAGE_PRIVATE_0);
+                                    GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_HW_RENDER);
 
                         void* dst_data = nullptr;
                         int dst_result = dst_gb->lock(GRALLOC_USAGE_SW_WRITE_OFTEN, &dst_data);
