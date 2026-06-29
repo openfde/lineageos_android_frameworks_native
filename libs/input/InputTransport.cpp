@@ -121,7 +121,7 @@ namespace android {
 // we really need.  So we make it smaller.  It just needs to be big enough to hold
 // a few dozen large multi-finger motion events in the case where an application gets
 // behind processing touches.
-static const size_t SOCKET_BUFFER_SIZE = 32 * 1024;
+static const size_t SOCKET_BUFFER_SIZE = 128 * 1024;
 
 // Nanoseconds per milliseconds.
 static const nsecs_t NANOS_PER_MS = 1000000;
