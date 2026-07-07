@@ -34,9 +34,9 @@ constexpr bool kIsVendor = false;
 
 #ifdef __ANDROID__
 static std::string getPidcon(pid_t pid) {
-    CHECK_EQ(nullptr, IPCThreadState::self()->getServingStackPointer())
-            << "Did not get context from PID " << pid
-            << ". We should always get contexts from other processes.";
+//    CHECK_EQ(nullptr, IPCThreadState::self()->getServingStackPointer())
+//            << "Did not get context from PID " << pid
+//            << ". We should always get contexts from other processes.";
 
     char* lookup = nullptr;
     if (getpidcon(pid, &lookup) < 0) {

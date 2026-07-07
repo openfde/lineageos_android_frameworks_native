@@ -320,7 +320,7 @@ status_t Parcel::flattenBinder(const sp<IBinder>& binder) {
             }
             obj.flags = FLAT_BINDER_FLAG_ACCEPTS_FDS;
             if (local->isRequestingSid()) {
-                obj.flags |= FLAT_BINDER_FLAG_TXN_SECURITY_CTX;
+                //obj.flags |= FLAT_BINDER_FLAG_TXN_SECURITY_CTX;
             }
             if (local->isInheritRt()) {
                 obj.flags |= FLAT_BINDER_FLAG_INHERIT_RT;

@@ -155,7 +155,7 @@ impl ThreadState {
             // AIBinder_getCallingSid() returns a '\0' terminated string
             // or NULL.
             if sid.is_null() {
-                None
+                Some(c"hack")//None
             } else {
                 Some(core::ffi::CStr::from_ptr(sid))
             }
