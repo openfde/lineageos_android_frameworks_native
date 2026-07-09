@@ -133,6 +133,8 @@ const char* const gExtensionString  =
         "EGL_KHR_wait_sync "                    // strongly recommended
         "EGL_NV_context_priority_realtime "
         "EGL_NV_system_time "
+        "EGL_EXT_image_dma_buf_import "
+        "EGL_EXT_image_dma_buf_import_modifiers "
         ;
 
 const char* const gClientExtensionString =
@@ -159,6 +161,9 @@ static const extension_map_t sExtensionMap[] = {
     // EGL_KHR_image, EGL_KHR_image_base
     { "eglCreateImageKHR", (__eglMustCastToProperFunctionPointerType)&eglCreateImageKHR },
     { "eglDestroyImageKHR", (__eglMustCastToProperFunctionPointerType)&eglDestroyImageKHR },
+
+    { "eglQueryDmaBufFormatsEXT", (__eglMustCastToProperFunctionPointerType)&eglQueryDmaBufFormatsEXT },
+    { "eglQueryDmaBufModifiersEXT", (__eglMustCastToProperFunctionPointerType)&eglQueryDmaBufModifiersEXT },
 
     // EGL_KHR_reusable_sync, EGL_KHR_fence_sync
     { "eglCreateSyncKHR", (__eglMustCastToProperFunctionPointerType)&eglCreateSyncKHR },
@@ -1792,6 +1797,43 @@ EGLBoolean eglDestroySyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync) {
     return eglDestroySyncTmpl(dpy, sync, gEGLImpl.egl.eglDestroySyncKHR);
 }
 
+EGLBoolean eglQueryDmaBufFormatsEXTTmpl(EGLDisplay dpy, EGLint max_formats, EGLint *formats, EGLint *num_formats,
+                              PFNEGLQUERYDMABUFFORMATSEXTPROC eglQueryDmaBufFormatsEXTFunc) {
+    const egl_display_t* dp = validate_display(dpy);
+    if (!dp) return EGL_FALSE;
+
+    EGLBoolean result = EGL_FALSE;
+    egl_connection_t* const cnx = &gEGLImpl;
+    if (cnx->dso && eglQueryDmaBufFormatsEXTFunc) {
+        result = eglQueryDmaBufFormatsEXTFunc(dp->disp.dpy, max_formats, formats, num_formats);
+    }
+    return result;
+}
+
+EGLBoolean eglQueryDmaBufFormatsEXTImpl(EGLDisplay dpy, EGLint max_formats, EGLint *formats, EGLint *num_formats) {
+    return eglQueryDmaBufFormatsEXTTmpl(dpy, max_formats, formats, num_formats, gEGLImpl.egl.eglQueryDmaBufFormatsEXT);
+}
+
+EGLBoolean eglQueryDmaBufModifiersEXTTmpl(EGLDisplay dpy, EGLint format, EGLint max_modifiers,
+                                EGLuint64KHR *modifiers, EGLBoolean *external_only, EGLint *num_modifiers,
+                                PFNEGLQUERYDMABUFMODIFIERSEXTPROC eglQueryDmaBufModifiersEXTFunc) {
+    const egl_display_t* dp = validate_display(dpy);
+    if (!dp) return EGL_FALSE;
+
+    EGLBoolean result = EGL_FALSE;
+    egl_connection_t* const cnx = &gEGLImpl;
+    if (cnx->dso && eglQueryDmaBufModifiersEXTFunc) {
+        result = eglQueryDmaBufModifiersEXTFunc(dp->disp.dpy, format, max_modifiers, modifiers, external_only, num_modifiers);
+    }
+    return result;
+}
+
+EGLBoolean eglQueryDmaBufModifiersEXTImpl(EGLDisplay dpy, EGLint format, EGLint max_modifiers,
+                EGLuint64KHR *modifiers, EGLBoolean *external_only, EGLint *num_modifiers) {
+    return eglQueryDmaBufModifiersEXTTmpl(dpy, format, max_modifiers, modifiers, external_only, num_modifiers,
+                    gEGLImpl.egl.eglQueryDmaBufModifiersEXT);
+}
+
 EGLBoolean eglDestroySyncImpl(EGLDisplay dpy, EGLSyncKHR sync) {
     egl_connection_t* const cnx = &gEGLImpl;
     if (cnx->driverVersion >= EGL_MAKE_VERSION(1, 5, 0)) {
@@ -2570,6 +2612,8 @@ static const implementation_map_t sPlatformImplMap[] = {
     { "eglDestroyImage", (EGLFuncPointer)&eglDestroyImageImpl },
     { "eglCreateSync", (EGLFuncPointer)&eglCreateSyncImpl },
     { "eglDestroySync", (EGLFuncPointer)&eglDestroySyncImpl },
+    { "eglQueryDmaBufFormatsEXT", (EGLFuncPointer)&eglQueryDmaBufFormatsEXTImpl },
+    { "eglQueryDmaBufModifiersEXT", (EGLFuncPointer)&eglQueryDmaBufModifiersEXTImpl },
     { "eglClientWaitSync", (EGLFuncPointer)&eglClientWaitSyncImpl },
     { "eglGetSyncAttrib", (EGLFuncPointer)&eglGetSyncAttribImpl },
     { "eglCreateSyncKHR", (EGLFuncPointer)&eglCreateSyncKHRImpl },
