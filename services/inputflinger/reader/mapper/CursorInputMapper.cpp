@@ -94,6 +94,39 @@ void CursorMotionAccumulator::finishSync() {
     clearRelativeAxes();
 }
 
+// --- CursorPositionAccumulator ---
+
+CursorPositionAccumulator::CursorPositionAccumulator() {
+    clearPosition();
+}
+
+void CursorPositionAccumulator::reset(InputDeviceContext& deviceContext) {
+    clearPosition();
+}
+
+void CursorPositionAccumulator::clearPosition() {
+    mX = 0;
+    mY = 0;
+}
+
+void CursorPositionAccumulator::process(const RawEvent& rawEvent) {
+    if (rawEvent.type == EV_ABS) {
+        switch (rawEvent.code) {
+        case ABS_X:
+            mX = rawEvent.value;
+            break;
+        case ABS_Y:
+            mY = rawEvent.value;
+            break;
+        }
+    }
+}
+
+void CursorPositionAccumulator::finishSync() {
+    clearPosition();
+}
+
+
 // --- CursorInputMapper ---
 
 CursorInputMapper::CursorInputMapper(InputDeviceContext& deviceContext,
@@ -237,6 +270,7 @@ std::list<NotifyArgs> CursorInputMapper::reset(nsecs_t when) {
 
     mCursorButtonAccumulator.reset(getDeviceContext());
     mCursorMotionAccumulator.reset(getDeviceContext());
+    mCursorPositionAccumulator.reset(getDeviceContext());
     mCursorScrollAccumulator.reset(getDeviceContext());
 
     return InputMapper::reset(when);
@@ -246,6 +280,7 @@ std::list<NotifyArgs> CursorInputMapper::process(const RawEvent& rawEvent) {
     std::list<NotifyArgs> out;
     mCursorButtonAccumulator.process(rawEvent);
     mCursorMotionAccumulator.process(rawEvent);
+    mCursorPositionAccumulator.process(rawEvent);
     mCursorScrollAccumulator.process(rawEvent);
 
     if (rawEvent.type == EV_SYN && rawEvent.code == SYN_REPORT) {
@@ -344,6 +379,11 @@ std::list<NotifyArgs> CursorInputMapper::sync(nsecs_t when, nsecs_t readTime) {
             moveCoords.setAxisValue(AMOTION_EVENT_AXIS_X, deltaX);
             moveCoords.setAxisValue(AMOTION_EVENT_AXIS_Y, deltaY);
         }
+        if (mSource == AINPUT_SOURCE_MOUSE) {
+            moveCoords.setAxisValue(AMOTION_EVENT_AXIS_X, mCursorPositionAccumulator.getX());
+            moveCoords.setAxisValue(AMOTION_EVENT_AXIS_Y, mCursorPositionAccumulator.getY());
+            ALOGD("CursorInputMapper::sync: mCursorPositionAccumulator.getX(): %d, mCursorPositionAccumulator.getY(): %d ", mCursorPositionAccumulator.getX(), mCursorPositionAccumulator.getY());
+        }
 
         moveCoords.setAxisValue(AMOTION_EVENT_AXIS_PRESSURE, wasDown ? 1.0f : 0.0f);
 
@@ -351,7 +391,7 @@ std::list<NotifyArgs> CursorInputMapper::sync(nsecs_t when, nsecs_t readTime) {
                                        mSource, *mDisplayId, policyFlags, action, 0, 0, metaState,
                                        lastButtonState, MotionClassification::NONE, 1,
                                        &pointerProperties, &moveCoords, mXPrecision, mYPrecision,
-                                       xCursorPosition, yCursorPosition, downTime,
+                                       mCursorPositionAccumulator.getX(), mCursorPositionAccumulator.getY(), downTime,
                                        /*videoFrames=*/{}));
     }
 
