@@ -672,16 +672,63 @@ bool EventHub::Device::populateAbsoluteAxisStates() {
             continue;
         }
         struct input_absinfo info {};
-        if (ioctl(fd, EVIOCGABS(axis), &info)) {
-            ALOGE("Error reading axis info for device '%s' axis %s fd %d: %s",
-                  identifier.name.c_str(),
-                  InputEventLookup::getLinuxEvdevLabel(EV_ABS, axis, 0).code.c_str(), fd,
-                  strerror(errno));
-            if (errno == ENODEV) {
-                // The device no longer exists. There's no point trying to query any more axes.
-                return false;
+        if (identifier.location != "wayland") {
+            if (ioctl(fd, EVIOCGABS(axis), &info)) {
+                ALOGE("Error reading axis info for device '%s' axis %s fd %d: %s",
+                      identifier.name.c_str(),
+                      InputEventLookup::getLinuxEvdevLabel(EV_ABS, axis, 0).code.c_str(), fd,
+                      strerror(errno));
+                if (errno == ENODEV) {
+                    // The device no longer exists. There's no point trying to query any more axes.
+                    return false;
+                }
+                continue;
             }
-            continue;
+        }else {
+            char property[PROPERTY_VALUE_MAX];
+            int width = 0;
+            int height = 0;
+            if (property_get("openfde.display_width", property, nullptr) > 0) {
+                width = atoi(property);
+            }
+
+            if (property_get("openfde.display_height", property, nullptr) > 0) {
+                height = atoi(property);
+            }
+
+            info.minimum = 0;
+
+            switch(axis) {
+                case ABS_MT_POSITION_X:
+                case ABS_X:
+                    info.maximum = width;
+                    break;
+                case ABS_MT_POSITION_Y:
+                case ABS_Y:
+                    info.maximum = height;
+                    break;
+                case ABS_MT_SLOT:
+                    info.maximum = 9;
+                    break;
+                case ABS_PRESSURE:
+                case ABS_MT_PRESSURE:
+                    info.maximum = 255;
+                    break;
+                case ABS_MT_TRACKING_ID:
+                    info.maximum = 65535;
+                    break;
+                case ABS_MT_TOUCH_MAJOR:
+                case ABS_MT_TOUCH_MINOR:
+                    info.maximum = 15;
+                    break;
+                case ABS_MT_ORIENTATION:
+                    info.maximum = 1;
+                    break;
+            }
+
+            info.flat = 0;
+            info.fuzz = 0;
+            info.resolution = 1;
         }
         auto& [axisInfo, value] = absState[axis];
         axisInfo.minValue = info.minimum;
@@ -1005,6 +1052,25 @@ static void ensureProcessCanBlockSuspend() {
 // --- EventHub ---
 
 const int EventHub::EPOLL_MAX_EVENTS;
+
+enum {
+    WL_INPUT_TOUCH,
+    WL_INPUT_KEYBOARD,
+    WL_INPUT_POINTER,
+    WL_INPUT_TOTAL
+};
+
+static const char *INPUT_PIPE_NAME[WL_INPUT_TOTAL] = {
+    "/dev/input/wl_touch_events",
+    "/dev/input/wl_keyboard_events",
+    "/dev/input/wl_pointer_events"
+};
+
+static const char *INPUT_TYPE_NAME[WL_INPUT_TOTAL] = {
+    "wayland_touch",
+    "wayland_keyboard",
+    "wayland_pointer"
+};
 
 EventHub::EventHub(void)
       : mBuiltInKeyboardId(NO_BUILT_IN_KEYBOARD),
@@ -2463,8 +2529,27 @@ void EventHub::openDeviceLocked(const std::string& devicePath) {
         return;
     }
 
+	int inputType = 0;
+    bool isWayland = false;
+
+    for (inputType = 0; inputType < WL_INPUT_TOTAL; inputType++) {
+        if (strcmp(devicePath.c_str(), INPUT_PIPE_NAME[inputType]) == 0) {
+            isWayland = true;
+            break;
+        }
+    }
+
     InputDeviceIdentifier identifier;
 
+    if (isWayland) {
+        identifier.name = INPUT_TYPE_NAME[inputType];
+        identifier.bus = BUS_VIRTUAL;
+        identifier.product = 1;
+        identifier.vendor = 1;
+        identifier.version = 1;
+        identifier.location = "wayland";
+        identifier.uniqueId = INPUT_TYPE_NAME[inputType];
+    } else {
     // Get device name.
     if (ioctl(fd, EVIOCGNAME(sizeof(buffer) - 1), &buffer) < 1) {
         ALOGE("Could not get device name for %s: %s", devicePath.c_str(), strerror(errno));
@@ -2529,7 +2614,7 @@ void EventHub::openDeviceLocked(const std::string& devicePath) {
             c = ::toupper(c);
         }
     }
-
+    }
     // Fill in the descriptor.
     assignDescriptorLocked(identifier);
 
@@ -2564,12 +2649,13 @@ void EventHub::openDeviceLocked(const std::string& devicePath) {
     ALOGV("  location:   \"%s\"\n", identifier.location.c_str());
     ALOGV("  unique id:  \"%s\"\n", identifier.uniqueId.c_str());
     ALOGV("  descriptor: \"%s\"\n", identifier.descriptor.c_str());
-    ALOGV("  driver:     v%d.%d.%d\n", driverVersion >> 16, (driverVersion >> 8) & 0xff,
-          driverVersion & 0xff);
+    //ALOGV("  driver:     v%d.%d.%d\n", driverVersion >> 16, (driverVersion >> 8) & 0xff,
+    //      driverVersion & 0xff);
 
     // Obtain the associated device, if any.
     device->associatedDevice = obtainAssociatedDeviceLocked(devicePath, device->configuration);
 
+    if (!isWayland) {
     // Figure out the kinds of events the device reports.
     device->readDeviceBitMask(EVIOCGBIT(EV_KEY, 0), device->keyBitmask);
     device->readDeviceBitMask(EVIOCGBIT(EV_ABS, 0), device->absBitmask);
@@ -2755,6 +2841,44 @@ void EventHub::openDeviceLocked(const std::string& devicePath) {
         device->classes.test(InputDeviceClass::GAMEPAD)) {
         device->controllerNumber = getNextControllerNumberLocked(device->identifier.name);
         device->setLedForControllerLocked();
+    }
+    } else {
+        if (inputType == WL_INPUT_TOUCH) {
+            device->classes |= InputDeviceClass::TOUCH_MT;
+
+            device->propBitmask.set(INPUT_PROP_DIRECT, true);
+            device->absBitmask.set(ABS_MT_POSITION_X, true);
+            device->absBitmask.set(ABS_MT_POSITION_Y, true);
+            device->absBitmask.set(ABS_MT_TOUCH_MAJOR, true);
+            device->absBitmask.set(ABS_MT_TOUCH_MINOR, true);
+            device->absBitmask.set(ABS_MT_ORIENTATION, true);
+            device->absBitmask.set(ABS_MT_TRACKING_ID, true);
+            device->absBitmask.set(ABS_MT_PRESSURE, true);
+            device->absBitmask.set(ABS_MT_SLOT, true);
+
+            device->absBitmask.set(ABS_X, true);
+            device->absBitmask.set(ABS_Y, true);
+            device->absBitmask.set(ABS_PRESSURE, true);
+        } else if (inputType == WL_INPUT_KEYBOARD) {
+            device->classes |= InputDeviceClass::KEYBOARD;
+            device->classes |= InputDeviceClass::ALPHAKEY;
+            device->keyBitmask.set(BTN_MISC, true);
+            device->keyBitmask.set(KEY_OK, true);
+            // Load the keymap for the device.
+            device->loadKeyMapLocked();
+        } else if (inputType == WL_INPUT_POINTER) {
+            device->classes |= InputDeviceClass::CURSOR;
+
+            device->propBitmask.set(INPUT_PROP_POINTER, true);
+
+            device->absBitmask.set(ABS_X, true);
+            device->absBitmask.set(ABS_Y, true);
+            device->keyBitmask.set(BTN_MOUSE, true);
+            device->relBitmask.set(REL_X, true);
+            device->relBitmask.set(REL_Y, true);
+            device->relBitmask.set(REL_HWHEEL, true);
+            device->relBitmask.set(REL_WHEEL, true);
+        }
     }
 
     if (registerDeviceForEpollLocked(*device) != OK) {
