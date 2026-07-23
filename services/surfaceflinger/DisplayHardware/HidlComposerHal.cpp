@@ -309,10 +309,8 @@ void HidlComposer::registerCallback(const sp<IComposerCallback>& callback) {
 
     auto ret = [&]() {
         if (mClient_2_4) {
-            ALOGE("mClient_2_4->registerCallback_2_4(callback)");
             return mClient_2_4->registerCallback_2_4(callback);
         }
-        ALOGE("mClient->registerCallback(callback)");
         return mClient->registerCallback(callback);
     }();
     if (!ret.isOk()) {
@@ -1436,9 +1434,8 @@ Error HidlComposer::getClientTargetProperty(
 }
 
 V2_1::Error HidlComposer::setLayerName(Display, Layer layer, std::string name) {
-    ALOGE("setLayerName start------>>>>>>");
     if (!mOpenfdeDisplay) {
-        ALOGE("setLayerName mOpenfdeDisplay is null");
+        ALOGE("HidlComposer::setLayerName mOpenfdeDisplay is null");
         return V2_1::Error::UNSUPPORTED;
     }
     if (mLayersNameMap[mLayersZMap[layer]] != name) {
