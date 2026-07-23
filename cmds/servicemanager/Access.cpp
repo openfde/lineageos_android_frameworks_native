@@ -40,7 +40,7 @@ static std::string getPidcon(pid_t pid) {
 
     char* lookup = nullptr;
     if (getpidcon(pid, &lookup) < 0) {
-        LOG(ERROR) << "SELinux: getpidcon(pid=" << pid << ") failed to retrieve pid context";
+        //LOG(ERROR) << "SELinux: getpidcon(pid=" << pid << ") failed to retrieve pid context";
         return "";
     }
     std::string result = lookup;
