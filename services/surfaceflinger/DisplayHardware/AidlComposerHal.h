@@ -215,6 +215,9 @@ public:
     Error getClientTargetProperty(
             Display display,
             composer3::ClientTargetPropertyWithBrightness* outClientTargetProperty) override;
+    // OpenfdeDisplay HAL 1.0
+    V2_1::Error setLayerName(Display display, Layer layer, std::string name) override;
+    V2_1::Error setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer) override;
 
     // AIDL Composer HAL
     Error setLayerBrightness(Display display, Layer layer, float brightness) override;

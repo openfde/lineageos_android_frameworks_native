@@ -37,6 +37,8 @@ cc_defaults {
         "libSurfaceFlingerProp",
         "libui",
         "libutils",
+        "vendor.openfde.display@1.0",
+        "vendor.openfde.display@1.1",
     ],
     static_libs: [
         "libguiflags",
@@ -96,6 +98,14 @@ cc_library {
     ],
     local_include_dirs: ["include"],
     export_include_dirs: ["include"],
+    shared_libs: [
+        "vendor.openfde.display@1.0",
+        "vendor.openfde.display@1.1",
+    ],
+    export_shared_lib_headers: [
+        "vendor.openfde.display@1.0",
+        "vendor.openfde.display@1.1",
+    ],
 }
 
 cc_library {

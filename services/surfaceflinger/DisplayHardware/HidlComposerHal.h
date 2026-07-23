@@ -43,6 +43,7 @@
 #pragma clang diagnostic pop // ignored "-Wconversion -Wextra"
 
 namespace android::Hwc2 {
+using namespace vendor::openfde::display;
 
 namespace types = hardware::graphics::common;
 
@@ -320,6 +321,9 @@ public:
     Error getClientTargetProperty(
             Display display,
             composer3::ClientTargetPropertyWithBrightness* outClientTargetProperty) override;
+    // OpenfdeDisplay HAL 1.0
+    V2_1::Error setLayerName(Display display, Layer layer, std::string name) override;
+    V2_1::Error setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer) override;
 
     // AIDL Composer HAL
     Error setLayerBrightness(Display display, Layer layer, float brightness) override;
@@ -399,6 +403,12 @@ private:
     static const constexpr uint32_t kMaxLayerBufferCount = BufferQueue::NUM_BUFFER_SLOTS + 1;
     CommandWriter mWriter;
     CommandReader mReader;
+
+    sp<V1_0::IOpenfdeDisplay> mOpenfdeDisplay;
+    sp<V1_1::IOpenfdeDisplay> mOpenfdeDisplay_1;
+    std::map<Layer, int32_t> mLayersZMap;
+    std::map<int32_t, std::string> mLayersNameMap;
+    std::map<int32_t, const native_handle_t*> mLayersHandleMap;
 };
 
 } // namespace android::Hwc2

@@ -309,13 +309,16 @@ void HidlComposer::registerCallback(const sp<IComposerCallback>& callback) {
 
     auto ret = [&]() {
         if (mClient_2_4) {
+            ALOGE("mClient_2_4->registerCallback_2_4(callback)");
             return mClient_2_4->registerCallback_2_4(callback);
         }
+        ALOGE("mClient->registerCallback(callback)");
         return mClient->registerCallback(callback);
     }();
     if (!ret.isOk()) {
         ALOGE("failed to register IComposerCallback");
     }
+    mOpenfdeDisplay = V1_0::IOpenfdeDisplay::getService();
 }
 
 Error HidlComposer::executeCommands(Display) {
@@ -391,6 +394,7 @@ Error HidlComposer::createLayer(Display display, Layer* outLayer) {
 }
 
 Error HidlComposer::destroyLayer(Display display, Layer layer) {
+    mLayersZMap.erase(layer);
     auto ret = mClient->destroyLayer(display, layer);
     return static_cast<Error>(unwrapRet(ret));
 }
@@ -626,6 +630,10 @@ Error HidlComposer::setClientTarget(Display display, uint32_t slot, const sp<Gra
 
     const native_handle_t* handle = nullptr;
     if (target.get()) {
+        if (mOpenfdeDisplay)
+            mOpenfdeDisplay->setTargetLayerHandleInfo(target->getPixelFormat(), target->getStride());
+        if (mOpenfdeDisplay_1)
+            mOpenfdeDisplay_1->setTargetLayerSize(target->getWidth(), target->getHeight());
         handle = target->getNativeBuffer()->handle;
     }
 
@@ -891,6 +899,7 @@ Error HidlComposer::setLayerZOrder(Display display, Layer layer, uint32_t z) {
     mWriter.selectDisplay(display);
     mWriter.selectLayer(layer);
     mWriter.setLayerZOrder(z);
+    mLayersZMap[layer] = z;
     return Error::NONE;
 }
 
@@ -1424,6 +1433,40 @@ Error HidlComposer::getClientTargetProperty(
     outClientTargetProperty->brightness = 1.f;
     outClientTargetProperty->dimmingStage = composer3::DimmingStage::NONE;
     return Error::NONE;
+}
+
+V2_1::Error HidlComposer::setLayerName(Display, Layer layer, std::string name) {
+    ALOGE("setLayerName start------>>>>>>");
+    if (!mOpenfdeDisplay) {
+        ALOGE("setLayerName mOpenfdeDisplay is null");
+        return V2_1::Error::UNSUPPORTED;
+    }
+    if (mLayersNameMap[mLayersZMap[layer]] != name) {
+        mLayersNameMap[mLayersZMap[layer]] = name;
+        return mOpenfdeDisplay->setLayerName(mLayersZMap[layer], name);
+    } else
+        return V2_1::Error::NONE;
+}
+
+V2_1::Error HidlComposer::setLayerHandleInfo(Display, Layer layer, const sp<GraphicBuffer>& buffer) {
+    V2_1::Error error;
+    if (!mOpenfdeDisplay)
+        return V2_1::Error::UNSUPPORTED;
+
+    if (buffer.get() &&
+            mLayersHandleMap[mLayersZMap[layer]] != buffer->getNativeBuffer()->handle) {
+        mLayersHandleMap[mLayersZMap[layer]] = buffer->getNativeBuffer()->handle;
+        error = mOpenfdeDisplay->setLayerHandleInfo(mLayersZMap[layer],
+                                                    buffer->getPixelFormat(),
+                                                    buffer->getStride());
+        if (error != V2_1::Error::NONE)
+            return error;
+
+        if (mOpenfdeDisplay_1)
+            mOpenfdeDisplay_1->setLayerSize(mLayersZMap[layer],
+                                            buffer->getWidth(), buffer->getHeight());
+    }
+    return V2_1::Error::NONE;
 }
 
 Error HidlComposer::getRequestedLuts(Display, std::vector<Layer>*,

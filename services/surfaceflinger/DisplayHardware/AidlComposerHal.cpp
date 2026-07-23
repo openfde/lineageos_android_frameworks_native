@@ -1671,6 +1671,19 @@ Error AidlComposer::getClientTargetProperty(
     return error;
 }
 
+V2_1::Error AidlComposer::setLayerName(Display display, Layer layer, std::string name) {
+    (void)display;
+    (void)layer;
+    (void)name;
+    return V2_1::Error::NONE;
+}
+V2_1::Error AidlComposer::setLayerHandleInfo(Display display, Layer layer, const sp<GraphicBuffer>& buffer){
+    (void)display;
+    (void)layer;
+    (void)buffer;
+    return V2_1::Error::NONE;
+}
+
 Error AidlComposer::getRequestedLuts(Display display, std::vector<Layer>* outLayers,
                                      std::vector<DisplayLuts::LayerLut>* outLuts) {
     Error error = Error::NONE;
