@@ -1355,8 +1355,8 @@ std::list<NotifyArgs> TouchInputMapper::sync(nsecs_t when, nsecs_t readTime) {
              last.rawPointerData.touchingIdBits.value, next.rawPointerData.touchingIdBits.value,
              last.rawPointerData.hoveringIdBits.value, next.rawPointerData.hoveringIdBits.value,
              next.rawPointerData.canceledIdBits.value);
-    if (debugRawEvents() && last.rawPointerData.pointerCount == 0 &&
-        next.rawPointerData.pointerCount == 1) {
+    if (false/*debugRawEvents() && last.rawPointerData.pointerCount == 0 &&
+        next.rawPointerData.pointerCount == 1*/) {
         // Dump a bunch of info to try to debug b/396796958.
         // TODO(b/396796958): remove this debug dump.
         ALOGD("pointerCount went from 0 to 1. last:\n%s",
