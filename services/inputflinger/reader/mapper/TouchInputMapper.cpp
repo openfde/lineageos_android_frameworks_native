@@ -299,7 +299,9 @@ std::list<NotifyArgs> TouchInputMapper::reconfigure(nsecs_t when,
     // Full configuration should happen the first time configure is called and
     // when the device type is changed. Changing a device type can affect
     // various other parameters so should result in a reconfiguration.
-    if (!changes.any() || changes.test(InputReaderConfiguration::Change::DEVICE_TYPE)) {
+
+    if (!changes.any() || changes.test(InputReaderConfiguration::Change::DEVICE_TYPE) ||
+        changes.test(InputReaderConfiguration::Change::DISPLAY_INFO)) { 
         // Configure basic parameters.
         mParameters = computeParameters(getDeviceContext());
 
@@ -309,6 +311,24 @@ std::list<NotifyArgs> TouchInputMapper::reconfigure(nsecs_t when,
 
         // Configure absolute axis information.
         configureRawPointerAxes();
+
+        std::optional<DisplayViewport> viewport = 
+                mConfig.getDisplayViewportByType(ViewportType::INTERNAL);
+
+        if (viewport) {
+            int32_t logicalWidth = std::abs(viewport->logicalRight - viewport->logicalLeft);
+            int32_t logicalHeight = std::abs(viewport->logicalBottom - viewport->logicalTop);
+
+            if (logicalWidth > 0 && logicalHeight > 0) {
+                mRawPointerAxes.x.maxValue = logicalWidth;
+                mRawPointerAxes.y.maxValue = logicalHeight;
+
+                ALOGI("OpenFDE Dynamic Raw Axes: Device='%s', NewRawMax=[%d, %d]", 
+                      getDeviceName().c_str(), 
+                      mRawPointerAxes.x.maxValue, 
+                      mRawPointerAxes.y.maxValue);
+            }
+        }
 
         // Prepare input device calibration.
         parseCalibration();
