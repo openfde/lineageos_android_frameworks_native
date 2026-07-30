@@ -89,6 +89,7 @@ cc_defaults {
         "vendor.openfde.display@1.0",
         "vendor.openfde.display@1.1",
         "server_configurable_flags",
+        "libgpu-converter",
     ],
     static_libs: [
         "libaidlcommonsupport",

@@ -25,6 +25,8 @@
 
 #include <com_android_graphics_libgui_flags.h>
 
+#include <cutils/properties.h>
+
 namespace android {
 
 // Macros for including the SurfaceTexture name in log messages
@@ -48,12 +50,19 @@ SurfaceTexture::SurfaceTexture(const sp<IGraphicBufferConsumer>& bq, uint32_t te
         mDefaultWidth(1),
         mDefaultHeight(1),
         mFilteringEnabled(true),
+        mUseEglProxy(false),
         mTexName(tex),
         mUseFenceSync(useFenceSync),
         mTexTarget(texTarget),
         mCurrentTexture(BufferQueue::INVALID_BUFFER_SLOT),
         mOpMode(OpMode::attachedToGL) {
     SFT_LOGV("SurfaceTexture");
+
+    char prop_egl_type[PROPERTY_VALUE_MAX];
+    property_get("ro.hardware.graphics.egl", prop_egl_type, "none");
+    if (strcmp(prop_egl_type, "proxy") == 0) {
+        mUseEglProxy = true;
+    }
 
     memcpy(mCurrentTransformMatrix, mtxIdentity.asArray(), sizeof(mCurrentTransformMatrix));
 
@@ -73,12 +82,19 @@ SurfaceTexture::SurfaceTexture(const sp<IGraphicBufferConsumer>& bq, uint32_t te
         mDefaultWidth(1),
         mDefaultHeight(1),
         mFilteringEnabled(true),
+        mUseEglProxy(false),
         mTexName(0),
         mUseFenceSync(useFenceSync),
         mTexTarget(texTarget),
         mCurrentTexture(BufferQueue::INVALID_BUFFER_SLOT),
         mOpMode(OpMode::detached) {
     SFT_LOGV("SurfaceTexture");
+
+    char prop_egl_type[PROPERTY_VALUE_MAX];
+    property_get("ro.hardware.graphics.egl", prop_egl_type, "none");
+    if (strcmp(prop_egl_type, "proxy") == 0) {
+        mUseEglProxy = true;
+    }
 
     memcpy(mCurrentTransformMatrix, mtxIdentity.asArray(), sizeof(mCurrentTransformMatrix));
 
@@ -280,14 +296,15 @@ void SurfaceTexture::computeCurrentTransformMatrixLocked() {
         SFT_LOGD("computeCurrentTransformMatrixLocked: no current item");
     }
     computeTransformMatrix(mCurrentTransformMatrix, buf, mCurrentCrop, mCurrentTransform,
-                           mFilteringEnabled);
+                           mFilteringEnabled, mUseEglProxy, mPackageName);
 }
 
 void SurfaceTexture::computeTransformMatrix(float outTransform[16], const sp<GraphicBuffer>& buf,
                                             const Rect& cropRect, uint32_t transform,
-                                            bool filtering) {
+                                            bool filtering, bool useProxy, const String8& packageName) {
     // Transform matrices
     static const mat4 mtxFlipH(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1);
+    static const mat4 mtxProxyFlipV(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1);
     static const mat4 mtxFlipV(1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1);
     static const mat4 mtxRot90(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1);
 
@@ -296,7 +313,15 @@ void SurfaceTexture::computeTransformMatrix(float outTransform[16], const sp<Gra
         xform *= mtxFlipH;
     }
     if (transform & NATIVE_WINDOW_TRANSFORM_FLIP_V) {
-        xform *= mtxFlipV;
+        if (useProxy) {
+            if (strcmp(packageName.c_str(), "tv.danmaku.bili") == 0) {
+                xform *= mtxProxyFlipV;
+            } else {
+                xform *= mtxFlipV;
+            }
+        } else {
+            xform *= mtxFlipV;
+        }
     }
     if (transform & NATIVE_WINDOW_TRANSFORM_ROT_90) {
         xform *= mtxRot90;

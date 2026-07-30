@@ -41,6 +41,8 @@
 #include "filters/LinearEffect.h"
 #include "filters/StretchShaderFactory.h"
 
+#include <GpuConverter.h>
+
 class SkData;
 
 struct SkPoint3;
@@ -137,7 +139,6 @@ private:
                             const std::vector<LayerSettings>& layers,
                             const std::shared_ptr<ExternalTexture>& buffer,
                             base::unique_fd&& bufferFence) override final;
-
     void dump(std::string& result) override final;
 
     // If requiresLinearEffect is true or the layer has a stretchEffect a new shader is returned.
@@ -190,6 +191,10 @@ private:
     // Same as above, but for protected content (eg. DRM)
     sk_sp<GrDirectContext> mProtectedGrContext;
     bool mInProtectedContext = false;
+
+    GpuConverter::ConvertInfo mConvertInfo;
+    sp<GpuConverter> mGpuConverter;
+    bool mIsEglProxy;
 };
 
 } // namespace skia

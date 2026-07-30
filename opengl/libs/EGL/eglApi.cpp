@@ -419,6 +419,21 @@ EGLSyncKHR eglCreateSyncKHR(EGLDisplay dpy, EGLenum type, const EGLint* attrib_l
     return cnx->platform.eglCreateSyncKHR(dpy, type, attrib_list);
 }
 
+EGLBoolean eglQueryDmaBufFormatsEXT(EGLDisplay dpy, EGLint max_formats, EGLint *formats, EGLint *num_formats) {
+    clearError();
+
+    egl_connection_t* const cnx = &gEGLImpl;
+    return cnx->platform.eglQueryDmaBufFormatsEXT(dpy, max_formats, formats, num_formats);
+}
+
+EGLBoolean eglQueryDmaBufModifiersEXT(EGLDisplay dpy, EGLint format, EGLint max_modifiers,
+                EGLuint64KHR *modifiers, EGLBoolean *external_only, EGLint *num_modifiers) {
+    clearError();
+
+    egl_connection_t* const cnx = &gEGLImpl;
+    return cnx->platform.eglQueryDmaBufModifiersEXT(dpy, format, max_modifiers, modifiers, external_only, num_modifiers);
+}
+
 EGLBoolean eglDestroySync(EGLDisplay dpy, EGLSyncKHR sync) {
     clearError();
 

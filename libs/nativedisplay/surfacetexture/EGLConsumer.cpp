@@ -91,6 +91,11 @@ EGLConsumer::EGLConsumer() : mEglDisplay(EGL_NO_DISPLAY), mEglContext(EGL_NO_CON
     if (strcmp(prop_egl_type, "mesa") == 0) {
         mIsMesa = true;
     }
+    mIsEglProxy = false;
+    property_get("ro.hardware.graphics.egl", prop_egl_type, "none");
+    if (strcmp(prop_egl_type, "proxy") == 0) {
+        mIsEglProxy = true;
+    }
 }
 
 status_t EGLConsumer::updateTexImage(SurfaceTexture& st) {
@@ -253,7 +258,7 @@ status_t EGLConsumer::updateAndReleaseLocked(const BufferItem& item, PendingRele
         return err;
     }
 
-    if (mIsMesa) {
+    if (mIsMesa || mIsEglProxy) {
         if (st.mSlots[slot].mGraphicBuffer->getPixelFormat() == HAL_PIXEL_FORMAT_YV12) {
             if (strcmp(st.mPackageName.c_str(), "tv.danmaku.bili") == 0) {
                 mNeedConvert = true;
